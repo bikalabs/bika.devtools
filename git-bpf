@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+#
+# $ git bpf pull branch-integration
+# $ git bpf push branch-integration
+# $ git bpf rebuild branch-integration
+#
+
+from commands import getoutput
+
+import json
+import os
+import sys
+
+path = os.path.split(os.path.abspath(os.path.realpath(__file__)))[-2]
+config_path = os.path.join(path, "bpf.json")
+try:
+    f = open(config_path)
+except:
+    print("%s not found" % config_path)
+    sys.exit()
+try:
+    config = json.loads(f.read())
+except:
+    print("%s invalid" % config_path)
+    sys.exit()
+
+def run(cmd):
+    out = getoutput(cmd + " 1>/dev/null").strip()
+    out = "\n%s" % out if out else ''
+    print(">>> {}{}".format(cmd, out))
+
+local_repo = os.getcwd().split("/")[-1]
+local_branch = getoutput('git branch').split("* ")[-1].split("\n")[0]
+
+action = sys.argv[1]
+int_branch_name = sys.argv[2]
+int_root_name = int_branch_name.split("-")[0]
+int_branch = config.get(int_branch_name, "")
+if not int_branch:
+    print("%s does not exist in bpf.json" % int_branch_name)
+    sys.exit()
+
+if action == "sync":
+    run("git checkout " + int_root_name)
+    run("git branch --set-upstream %s origin/%s" % (int_root_name, int_root_name))
+    run("git push origin %s" % int_root_name)
+    run("git pull origin %s" % int_root_name)
+    print
+    for feature in int_branch['features']:
+        run("git checkout " + feature)
+        run("git branch --set-upstream %s origin/%s" % (feature, feature))
+        run("git push origin %s" % feature)
+        run("git pull origin %s" % feature)
+        print
+elif action == "pull":
+    run("git checkout " + int_root_name)
+    run("git branch --set-upstream %s origin/%s" % (int_root_name, int_root_name))
+    run("git pull origin %s" % int_root_name)
+    print
+    for feature in int_branch['features']:
+        run("git checkout " + feature)
+        run("git branch --set-upstream %s origin/%s" % (feature, feature))
+        run("git pull origin %s" % feature)
+        print
+elif action == "push":
+    run("git checkout " + int_root_name)
+    run("git branch --set-upstream %s origin/%s" % (int_root_name, int_root_name))
+    run("git push origin %s" % int_root_name)
+    print
+    for feature in int_branch['features']:
+        run("git checkout " + feature)
+        run("git branch --set-upstream %s origin/%s" % (feature, feature))
+        run("git push origin %s" % feature)
+        print
+elif action == "rebuild":
+    run("git checkout " + int_root_name)
+    run("git checkout -B " + int_branch_name)
+    print
+    for feature in int_branch['features']:
+        run("git merge --no-ff --no-commit " + feature)
+        run("git commit -m 'auto-merge %s'" % feature)
+        print
+else:
+    print("invalid action " + action)
+    sys.exit()
+
+
+run("git checkout " + local_branch)
+print
