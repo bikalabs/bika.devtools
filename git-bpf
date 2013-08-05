@@ -56,14 +56,12 @@ def sync():
         int_root_name, int_root_name))
     run("git push origin %s" % int_root_name)
     run("git pull origin %s" % int_root_name)
-    print
     # push and pull all features
     for feature in int_branch['features']:
         run("git checkout " + feature)
         run("git branch --set-upstream %s origin/%s" % (feature, feature))
         run("git push origin %s" % feature)
         run("git pull origin %s" % feature)
-        print
 
 def pull():
     sync_rr()
@@ -79,13 +77,11 @@ def pull():
     run("git branch --set-upstream %s origin/%s" % (
         int_root_name, int_root_name))
     run("git pull origin %s" % int_root_name)
-    print
     # pull all features
     for feature in int_branch['features']:
         run("git checkout " + feature)
         run("git branch --set-upstream %s origin/%s" % (feature, feature))
         run("git pull origin %s" % feature)
-        print
 
 def push():
     sync_rr()
@@ -101,42 +97,34 @@ def push():
     run("git branch --set-upstream %s origin/%s" % (
         int_root_name, int_root_name))
     run("git push origin %s" % int_root_name)
-    print
     # push all features
     for feature in int_branch['features']:
         run("git checkout " + feature)
         run("git branch --set-upstream %s origin/%s" % (feature, feature))
         run("git push origin %s" % feature)
-        print
 
 def rebuild():
     sync_rr()
     run("git checkout " + int_root_name)
     run("git checkout -B " + int_branch_name)
-    print
     for feature in int_branch['features']:
         run("git merge --no-ff --no-commit " + feature)
         run("git commit -m 'auto-merge %s'" % feature)
-        print
 
 action = sys.argv[1]
 
 if action == "sync":
     sync()
     run("git checkout " + local_branch)
-    print
 elif action == "pull":
     pull()
     run("git checkout " + local_branch)
-    print
 elif action == "push":
     push()
     run("git checkout " + local_branch)
-    print
 elif action == "rebuild":
     rebuild()
     run("git checkout " + local_branch)
-    print
 else:
     print("invalid action " + action)
     sys.exit()
