@@ -24,55 +24,80 @@ except:
     print("%s invalid" % config_path)
     sys.exit()
 
+local_repo = os.getcwd().split("/")[-1]
+local_branch = getoutput('git branch').split("* ")[-1].split("\n")[0]
+
 def run(cmd):
     out = getoutput(cmd + " 1>/dev/null").strip()
     out = "\n%s" % out if out else ''
     print(">>> {}{}".format(cmd, out))
 
-local_repo = os.getcwd().split("/")[-1]
-local_branch = getoutput('git branch').split("* ")[-1].split("\n")[0]
-
-action = sys.argv[1]
-int_branch_name = sys.argv[2]
-int_root_name = int_branch_name.split("-")[0]
-int_branch = config.get(int_branch_name, "")
-if not int_branch:
-    print("%s does not exist in bpf.json" % int_branch_name)
-    sys.exit()
-
-if action == "sync":
+def sync():
+    # get branch name from args
+    int_branch_name = sys.argv[2]
+    int_root_name = int_branch_name.split("-")[0]
+    int_branch = config['integration_branches'].get(int_branch_name, "")
+    if not int_branch:
+        print("%s does not exist in bpf.json" % int_branch_name)
+        sys.exit()
+    # push and pull start-point
     run("git checkout " + int_root_name)
-    run("git branch --set-upstream %s origin/%s" % (int_root_name, int_root_name))
+    run("git branch --set-upstream %s origin/%s" % (
+        int_root_name, int_root_name))
     run("git push origin %s" % int_root_name)
     run("git pull origin %s" % int_root_name)
     print
+    # push and pull all features
     for feature in int_branch['features']:
         run("git checkout " + feature)
         run("git branch --set-upstream %s origin/%s" % (feature, feature))
         run("git push origin %s" % feature)
         run("git pull origin %s" % feature)
         print
-elif action == "pull":
+
+def pull():
+    # get branch name from args
+    int_branch_name = sys.argv[2]
+    int_root_name = int_branch_name.split("-")[0]
+    int_branch = config['integration_branches'].get(int_branch_name, "")
+    if not int_branch:
+        print("%s does not exist in bpf.json" % int_branch_name)
+        sys.exit()
+    # pull start-point
     run("git checkout " + int_root_name)
-    run("git branch --set-upstream %s origin/%s" % (int_root_name, int_root_name))
+    run("git branch --set-upstream %s origin/%s" % (
+        int_root_name, int_root_name))
     run("git pull origin %s" % int_root_name)
     print
+    # pull all features
     for feature in int_branch['features']:
         run("git checkout " + feature)
         run("git branch --set-upstream %s origin/%s" % (feature, feature))
         run("git pull origin %s" % feature)
         print
-elif action == "push":
+
+def push():
+    # get branch name from args
+    int_branch_name = sys.argv[2]
+    int_root_name = int_branch_name.split("-")[0]
+    int_branch = config['integration_branches'].get(int_branch_name, "")
+    if not int_branch:
+        print("%s does not exist in bpf.json" % int_branch_name)
+        sys.exit()
+    # push start-point
     run("git checkout " + int_root_name)
-    run("git branch --set-upstream %s origin/%s" % (int_root_name, int_root_name))
+    run("git branch --set-upstream %s origin/%s" % (
+        int_root_name, int_root_name))
     run("git push origin %s" % int_root_name)
     print
+    # push all features
     for feature in int_branch['features']:
         run("git checkout " + feature)
         run("git branch --set-upstream %s origin/%s" % (feature, feature))
         run("git push origin %s" % feature)
         print
-elif action == "rebuild":
+
+def rebuild():
     run("git checkout " + int_root_name)
     run("git checkout -B " + int_branch_name)
     print
@@ -80,10 +105,26 @@ elif action == "rebuild":
         run("git merge --no-ff --no-commit " + feature)
         run("git commit -m 'auto-merge %s'" % feature)
         print
+
+action = sys.argv[1]
+
+if action == "sync":
+    sync()
+    run("git checkout " + local_branch)
+    print
+elif action == "pull":
+    pull()
+    run("git checkout " + local_branch)
+    print
+elif action == "push":
+    push()
+    run("git checkout " + local_branch)
+    print
+elif action == "rebuild":
+    rebuild()
+    run("git checkout " + local_branch)
+    print
 else:
     print("invalid action " + action)
     sys.exit()
 
-
-run("git checkout " + local_branch)
-print

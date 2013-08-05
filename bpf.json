@@ -1,11 +1,18 @@
 {
-    "3.01a-integration": {
-        "features": [
-            "981-out-of-range-adapters",
-            "989-fix-manage-analyses-view",
-            "948-client-contact-permissions",
-            "invoicing",
-            "test-setupdata-importers"
-        ]
+    "integration_branches": {
+        "3.01a-integration": {
+            "features": [
+                "981-out-of-range-adapters",
+                "989-fix-manage-analyses-view",
+                "948-client-contact-permissions",
+                "invoicing",
+                "test-setupdata-importers"
+            ]
+        },
+        "epid-integration": {
+            "features": [
+                "989-fix-manage-analyses-view"
+            ]
+        }
     }
 }
