@@ -39,7 +39,7 @@ def sync_rr():
     out = getoutput("git commit -m 'update cache' 2>&1 > /dev/null")
     out = getoutput("git push 2>&1 > /dev/null")
     out = getoutput("git pull 2>&1 > /dev/null")
-    os.chdir(realpath)
+    os.chdir(cur_path)
 
 def sync():
     sync_rr()
