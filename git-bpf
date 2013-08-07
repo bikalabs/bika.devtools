@@ -44,7 +44,7 @@ def sync_rr():
     os.chdir(bpfpath)
     print(">>> sync rerere cach at " + bpfpath + "/rr-cache/" + local_repo)
     out = getoutput("git add .")
-    print(out.strip())
+    print("'" + out.strip()+ "'")
     out = getoutput("git commit -m 'update cache'")
     print(out.strip())
     out = getoutput("git pull")
