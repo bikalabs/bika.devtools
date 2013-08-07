@@ -42,10 +42,11 @@ def run(cmd, echo=True):
 def sync_rr():
     cur_path = os.getcwd()
     os.chdir(bpfpath)
-    out = getoutput("git add . 1 > /dev/null")
-    out = getoutput("git commit -m 'update cache' 1 > /dev/null")
-    out = getoutput("git pull -q 1 > /dev/null")
-    out = getoutput("git push -q 1 > /dev/null")
+    print("rerere at " + bpfpath)
+    out = getoutput("git add .")
+    out = getoutput("git commit -m 'update cache'")
+    out = getoutput("git pull")
+    out = getoutput("git push")
     os.chdir(cur_path)
 
 
@@ -54,7 +55,7 @@ def rebuild(remote, int_branch):
     run("git checkout -q -B " + int_branch_name)
     for feature in int_branch['features']:
         run("git merge -q --no-ff --no-commit " + feature)
-        run("git commit -q -m 'auto-merge %s'" % feature)
+        run("git commit -q -m 'merge feature branch %s'" % feature)
 
 
 def pull(remote, int_branch):
