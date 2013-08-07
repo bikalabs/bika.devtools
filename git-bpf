@@ -42,15 +42,11 @@ def run(cmd, echo=True):
 def sync_rr():
     cur_path = os.getcwd()
     os.chdir(bpfpath)
-    print(">>> sync rerere cach at " + bpfpath + "/rr-cache/" + local_repo)
-    out = getoutput("git add .")
-    print("'" + out.strip()+ "'")
-    out = getoutput("git commit -m 'update cache'")
-    print(out.strip())
-    out = getoutput("git pull")
-    print(out.strip())
-    out = getoutput("git push")
-    print(out.strip())
+    print(">>> " + bpfpath + "/rr-cache/" + local_repo)
+    call(["git", "add", "."])
+    call(["git",  "commit", "-m", "'update cache'", "-q"])
+    call(["git",  "pull", "-q"])
+    call(["git",  "push", "-q"])
     os.chdir(cur_path)
 
 
