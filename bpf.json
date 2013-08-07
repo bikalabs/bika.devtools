@@ -1,17 +1,26 @@
 {
     "integration_branches": {
+        "master-integration": {
+            "deploy-remote": "dev.bikalabs.com",
+            "features": [
+                "master-plone43-compat",
+                "master-697-worksheet-apply-template"
+            ]
+        },
         "3.01a-integration": {
             "features": [
                 "981-out-of-range-adapters",
                 "989-fix-manage-analyses-view",
                 "948-client-contact-permissions",
                 "invoicing",
-                "test-setupdata-importers"
+                "test-setupdata-importers",
+                "3.01a-697-worksheet-apply-template"
             ]
         },
         "epid-integration": {
+            "sync-to-remotes": [
+            ],
             "features": [
-                "989-fix-manage-analyses-view"
             ]
         }
     }
