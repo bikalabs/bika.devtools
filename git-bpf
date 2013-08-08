@@ -12,8 +12,6 @@ import json
 import os
 import sys
 
-remote = 'origin'
-
 bpfpath = os.path.split(os.path.abspath(os.path.realpath(__file__)))[-2]
 config_path = os.path.join(bpfpath, "bpf.json")
 try:
@@ -44,9 +42,9 @@ def sync_rr():
     os.chdir(bpfpath)
     print(">>> " + bpfpath + "/rr-cache/" + local_repo)
     call(["git", "add", "."])
-    call(["git",  "commit", "-m", "'update cache'", "-q"])
-    call(["git",  "pull", "-q"])
-    call(["git",  "push", "-q"])
+    call(["git", "commit", "-m", "'update cache'", "-q"])
+    call(["git", "pull", "-q"])
+    call(["git", "push", "-q"])
     os.chdir(cur_path)
 
 
@@ -84,15 +82,14 @@ def deploy(remote, int_branch):
 
 action = sys.argv[1]
 int_branch_name = sys.argv[2]
-
-# get integration branch from config
+remote = config.get("remote", "origin")
 int_root_name = int_branch_name.split("-")[0]
 int_branch = config['integration_branches'].get(int_branch_name, "")
 if not int_branch:
-    print("%s does not exist in bpf.json" % int_branch_name)
-    sys.exit()
+    sys.exit("%s does not exist in bpf.json" % int_branch_name)
 
 sync_rr()
+
 if action == "sync":
     pull(remote, int_branch)
     push(remote, int_branch)
@@ -100,15 +97,13 @@ elif action == "pull":
     pull(remote, int_branch)
 elif action == "push":
     push(remote, int_branch)
-elif action == "deploy":
+elif action == "deploy" and "deploy-remote" in int_branch:
     rebuild(remote, int_branch)
-    rebuild_remote = int_branch['deploy-remote'] if 'deploy-remote' in int_branch else 'origin'
-    deploy(rebuild_remote, int_branch)
+    deploy(int_branch['deploy-remote'], int_branch)
 elif action == "rebuild":
     rebuild(remote, int_branch)
 else:
-    print("invalid action " + action)
-    sys.exit()
+    sys.exit("invalid action " + action)
 
 run("git checkout -q " + local_branch, echo=False)
 run("git clean -q -xfd")

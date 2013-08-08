@@ -1,4 +1,5 @@
 {
+    "remote": "origin",
     "integration_branches": {
         "master-integration": {
             "deploy-remote": "dev.bikalabs.com",

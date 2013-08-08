@@ -1,0 +1,51 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="bika">
+
+ <genericsetup:upgradeStep
+        title="Add BatchID and BatchUID to AnalysisRequest"
+        description="Batches were introduced; set the BatchID to None on all existing ARs."
+        source="*"
+        destination="1010"
+        handler="bika.lims.upgrade.to1010.addBatches"
+        sortkey="1"
+        profile="bika.lims:default"/>
+
+ <genericsetup:upgradeStep
+        title="Add some bika types to portal_catalog"
+        description=""
+        source="*"
+        destination="1100"
+        handler="bika.lims.upgrade.to1100.upgrade"
+        sortkey="1"
+        profile="bika.lims:default"/>
+
+ <genericsetup:upgradeStep
+        title="Fix permissions"
+        description="Add some missing configuration (#615)"
+        source="1100"
+        destination="1101"
+        handler="bika.lims.upgrade.to1101.upgrade"
+        sortkey="1"
+        profile="bika.lims:default"/>
+
+ <genericsetup:upgradeStep
+        title="Add QueryWidget indexes to bika_catalog"
+        description=""
+        source="1101"
+        destination="1102"
+        handler="bika.lims.upgrade.to1102.upgrade"
+        sortkey="1"
+        profile="bika.lims:default"/>
+
+ <genericsetup:upgradeStep
+        title="Plone 4.3 compatibility"
+        description=""
+        source="1137"
+        destination="1138"
+        handler="bika.lims.upgrade.to1138.upgrade"
+        sortkey="1"
+        profile="bika.lims:default"/>
+
+</configure>
