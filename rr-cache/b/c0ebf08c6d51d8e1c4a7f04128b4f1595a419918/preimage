@@ -1,0 +1,22 @@
+from datetimewidget import DateTimeWidget
+from durationwidget import DurationWidget
+from partitionsetupwidget import PartitionSetupWidget
+from querywidget import QueryWidget
+from recordswidget import RecordsWidget
+from referenceresultswidget import ReferenceResultsWidget
+from referencewidget import ReferenceWidget
+from serviceswidget import ServicesWidget
+from analysisspecificationwidget import AnalysisSpecificationWidget
+from worksheettemplatelayoutwidget import WorksheetTemplateLayoutWidget
+from coordinatewidget import CoordinateWidget
+from analysisprofileanalyseswidget import AnalysisProfileAnalysesWidget
+from artemplateanalyseswidget import ARTemplateAnalysesWidget
+from artemplatepartitionswidget import ARTemplatePartitionsWidget
+from addresswidget import AddressWidget
+from scheduleinputwidget import ScheduleInputWidget
+<<<<<<<
+from bcquerywidget import BCQueryWidget
+=======
+from integer import IntegerWidget
+from decimal import DecimalWidget
+>>>>>>>

@@ -1,0 +1,254 @@
+<?xml version="1.0"?>
+<object name="portal_javascripts" meta_type="JavaScripts Registry">
+
+  <javascript authenticated="False"
+              id="++resource++bika.lims.js/jquery.json.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+ <javascript authenticated="False"
+              id="++resource++bika.lims.js/utils.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="++resource++bika.lims.js/jquery.json.js"/>
+
+  <javascript authenticated="False"
+              id="++resource++bika.lims.js/bika_listing.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/client.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/calcs.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/batch.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+<javascript authenticated="True"
+              id="++resource++bika.lims.js/ar.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+<javascript authenticated="True"
+              id="++resource++bika.lims.js/worksheet.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/sample.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/contact.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/referencesample.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/reports.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/analysisservice.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/artemplate.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/barcode.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/jquery-barcode-2.0.2.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="False"
+              id="++resource++bika.lims.js/jquery-query-2.1.7.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="False"
+              id="++resource++bika.lims.js/jquery.ui.combogrid-1.6.2.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="False"
+              id="++resource++bika.lims.js/jquery-timepicker.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+  <javascript authenticated="True"
+              id="++resource++bika.lims.js/attachments.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression=""
+              inline="False"
+              insert-after="*"/>
+
+<<<<<<<
+  <javascript authenticated="False"
+              id="++resource++bika.lims.js/ar_add.js"
+              cacheable="True"
+              compression="safe"
+              conditionalcomment=""
+              cookable="True"
+              enabled="on"
+              expression="python:request['URL'].find('/ar_add')>0"
+              inline="False"
+              insert-after="*"/>
+
+  <javascript cacheable="True"
+              compression="none"
+              cookable="True"
+              enabled="True"
+              id="++resource++plone.app.jquerytools.dateinput.js"
+              inline="False"
+              expression=""
+              insert-after="++resource++plone.app.jquerytools.js"/>
+
+</object>
+=======
+  <javascript cacheable="True" compression="none" cookable="True"
+              enabled="True" id="++resource++plone.app.jquerytools.dateinput.js" inline="False"
+              expression=""
+              insert-after="++resource++plone.app.jquerytools.js"
+              />
+
+ </object>
+>>>>>>>
