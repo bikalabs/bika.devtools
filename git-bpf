@@ -4,6 +4,8 @@
 # $ git bpf push branch-integration
 # $ git bpf rebuild branch-integration
 #
+# This script does not push or pull the rr_cache.
+#
 
 from subprocess import call
 from commands import getoutput
@@ -35,17 +37,6 @@ def run(cmd, echo=True):
     pretty_cmd = cmd.replace(" -q ", " ")
     if echo:
         print(">>> {}{}".format(pretty_cmd, out))
-
-
-def sync_rr():
-    cur_path = os.getcwd()
-    os.chdir(bpfpath)
-    print(">>> " + bpfpath + "/rr-cache/" + local_repo)
-    call(["git", "add", "."])
-    call(["git", "commit", "-m", "'update cache'", "-q"])
-    call(["git", "pull", "-q"])
-    call(["git", "push", "-q"])
-    os.chdir(cur_path)
 
 
 def rebuild(remote, int_branch):
@@ -87,8 +78,6 @@ int_root_name = int_branch_name.split("-")[0]
 int_branch = config['integration_branches'].get(int_branch_name, "")
 if not int_branch:
     sys.exit("%s does not exist in bpf.json" % int_branch_name)
-
-sync_rr()
 
 if action == "sync":
     pull(remote, int_branch)
