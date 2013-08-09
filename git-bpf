@@ -66,11 +66,6 @@ def push(remote, int_branch):
         run("git checkout -q " + feature, echo=False)
         run("git push -q {} {}:{}".format(remote, feature, feature))
 
-
-def deploy(remote, int_branch):
-    call(["git", "push", int_branch['deploy-remote'], "+{}:{}".format(int_branch_name, int_branch_name)])
-
-
 action = sys.argv[1]
 int_branch_name = sys.argv[2]
 remote = config.get("remote", "origin")
@@ -86,9 +81,6 @@ elif action == "pull":
     pull(remote, int_branch)
 elif action == "push":
     push(remote, int_branch)
-elif action == "deploy" and "deploy-remote" in int_branch:
-    rebuild(remote, int_branch)
-    deploy(int_branch['deploy-remote'], int_branch)
 elif action == "rebuild":
     rebuild(remote, int_branch)
 else:

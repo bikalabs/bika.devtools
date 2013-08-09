@@ -2,7 +2,6 @@
     "remote": "origin",
     "integration_branches": {
         "master-integration": {
-            "deploy-remote": "dev.bikalabs.com",
             "features": [
                 "master-plone43-compat",
                 "master-697-worksheet-apply-template"
@@ -20,8 +19,6 @@
             ]
         },
         "epid-integration": {
-            "sync-to-remotes": [
-            ],
             "features": [
             ]
         }
