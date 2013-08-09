@@ -17,7 +17,6 @@
                 "test-setupdata-importers",
                 "3.01a-697-worksheet-apply-template",
                 "3.01a-plone43-compat"
-
             ]
         },
         "epid-integration": {
