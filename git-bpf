@@ -86,5 +86,5 @@ elif action == "rebuild":
 else:
     sys.exit("invalid action " + action)
 
-run("git checkout -q " + local_branch, echo=False)
+#run("git checkout -q " + local_branch, echo=False)
 run("git clean -q -xfd")
