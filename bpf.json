@@ -4,7 +4,8 @@
         "master-integration": {
             "features": [
                 "master-plone43-compat",
-                "master-697-worksheet-apply-template"
+                "master-tests",
+                "master-1003-pub-prefs"
             ]
         },
         "3.01a-integration": {
