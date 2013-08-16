@@ -36,7 +36,7 @@ def run(cmd, echo=True):
     out = "\n%s" % out if out else ''
     pretty_cmd = cmd.replace(" -q ", " ")
     if echo:
-        print(">>> {}{}".format(pretty_cmd, out))
+        print(">>> {0}{1}".format(pretty_cmd, out))
 
 
 def rebuild(remote, int_branch):
@@ -50,21 +50,21 @@ def rebuild(remote, int_branch):
 def pull(remote, int_branch):
     # pull start-point
     run("git checkout -q " + int_root_name, echo=False)
-    run("git pull -q {} {}:{}".format(remote, int_root_name, int_root_name))
+    run("git pull -q {0} {1}:{2}".format(remote, int_root_name, int_root_name))
     # pull all features
     for feature in int_branch['features']:
         run("git checkout -q " + feature, echo=False)
-        run("git pull -q {} {}:{}".format(remote, feature, feature))
+        run("git pull -q {0} {1}:{2}".format(remote, feature, feature))
 
 
 def push(remote, int_branch):
     # push start-point
     run("git checkout -q " + int_root_name, echo=False)
-    run("git push -q {} {}:{}".format(remote, int_root_name, int_root_name))
+    run("git push -q {0} {1}:{2}".format(remote, int_root_name, int_root_name))
     # push all features
     for feature in int_branch['features']:
         run("git checkout -q " + feature, echo=False)
-        run("git push -q {} {}:{}".format(remote, feature, feature))
+        run("git push -q {0} {1}:{2}".format(remote, feature, feature))
 
 
 def sync_bpf():
