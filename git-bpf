@@ -66,6 +66,18 @@ def push(remote, int_branch):
         run("git checkout -q " + feature, echo=False)
         run("git push -q {} {}:{}".format(remote, feature, feature))
 
+
+def sync_bpf():
+    cur_path = os.getcwd()
+    os.chdir(bpfpath)
+    print(">>> Update " + bpfpath)
+    call(["git", "add", "."])
+    call(["git", "commit", "-m", "'update cache'", "-q"])
+    call(["git", "pull", "-q"])
+    call(["git", "push", "-q"])
+    os.chdir(cur_path)
+
+
 action = sys.argv[1]
 int_branch_name = sys.argv[2]
 remote = config.get("remote", "origin")
@@ -75,11 +87,14 @@ if not int_branch:
     sys.exit("%s does not exist in bpf.json" % int_branch_name)
 
 if action == "sync":
+    sync_bpf()
     pull(remote, int_branch)
     push(remote, int_branch)
 elif action == "pull":
+    sync_bpf()
     pull(remote, int_branch)
 elif action == "push":
+    sync_bpf()
     push(remote, int_branch)
 elif action == "rebuild":
     rebuild(remote, int_branch)
