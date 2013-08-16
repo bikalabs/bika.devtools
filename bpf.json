@@ -4,8 +4,7 @@
         "master-integration": {
             "features": [
                 "master-plone43-compat",
-                "master-tests",
-                "master-1003-pub-prefs"
+                "master-tests"
             ]
         },
         "3.01a-integration": {
@@ -16,7 +15,8 @@
                 "invoicing",
                 "test-setupdata-importers",
                 "3.01a-697-worksheet-apply-template",
-                "3.01a-plone43-compat"
+                "3.01a-plone43-compat",
+                "3.01a-1003-pub-prefs"
             ]
         },
         "epid-integration": {
