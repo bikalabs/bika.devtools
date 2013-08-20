@@ -13,7 +13,7 @@
                 "989-fix-manage-analyses-view",
                 "948-client-contact-permissions",
                 "invoicing",
-                "test-setupdata-importers",
+                "master-tests-setupdata-importers",
                 "3.01a-697-worksheet-apply-template",
                 "3.01a-plone43-compat",
                 "3.01a-1003-pub-prefs",
