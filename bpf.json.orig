@@ -16,9 +16,11 @@
                 "test-setupdata-importers",
                 "3.01a-697-worksheet-apply-template",
                 "3.01a-plone43-compat",
-                "3.01a-1003-pub-prefs",
-                "deprecated-flag",
-                "jsonapi"
+<<<<<<< HEAD
+                "3.01a-1003-pub-prefs"
+=======
+		"deprecated-flag"
+>>>>>>> 024fd3acee3fca25448dbac46a1ecd907897c108
             ]
         },
         "epid-integration": {

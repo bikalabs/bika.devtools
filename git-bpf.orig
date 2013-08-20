@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+#
+# $ git bpf pull branch-integration
+# $ git bpf push branch-integration
+# $ git bpf rebuild branch-integration
+#
+# This script does not push or pull the rr_cache.
+#
+
+from subprocess import call
+from commands import getoutput
+
+import json
+import os
+import sys
+
+bpfpath = os.path.split(os.path.abspath(os.path.realpath(__file__)))[-2]
+config_path = os.path.join(bpfpath, "bpf.json")
+try:
+    f = open(config_path)
+except:
+    print("%s not found" % config_path)
+    sys.exit()
+try:
+    config = json.loads(f.read())
+except:
+    print("%s invalid" % config_path)
+    sys.exit()
+
+local_repo = os.getcwd().split("/")[-1]
+local_branch = getoutput('git branch').split("* ")[-1].split("\n")[0]
+
+
+def run(cmd, echo=True):
+    out = getoutput(cmd + " 1>/dev/null").strip()
+    out = "\n%s" % out if out else ''
+    pretty_cmd = cmd.replace(" -q ", " ")
+    if echo:
+        print(">>> {0}{1}".format(pretty_cmd, out))
+
+
+def rebuild(remote, int_branch):
+    run("git checkout -q " + int_root_name, echo=False)
+    run("git checkout -q -B " + int_branch_name)
+    for feature in int_branch['features']:
+        run("git merge -q --no-ff --no-commit " + feature)
+        run("git commit -q -m 'merge feature branch %s'" % feature)
+
+
+def pull(remote, int_branch):
+    # pull start-point
+    run("git checkout -q " + int_root_name, echo=False)
+    run("git pull -q {0} {1}:{2}".format(remote, int_root_name, int_root_name))
+    # pull all features
+    for feature in int_branch['features']:
+        run("git checkout -q " + feature, echo=False)
+        run("git pull -q {0} {1}:{2}".format(remote, feature, feature))
+
+
+def push(remote, int_branch):
+    # push start-point
+    run("git checkout -q " + int_root_name, echo=False)
+    run("git push -q {0} {1}:{2}".format(remote, int_root_name, int_root_name))
+    # push all features
+    for feature in int_branch['features']:
+        run("git checkout -q " + feature, echo=False)
+        run("git push -q {0} {1}:{2}".format(remote, feature, feature))
+
+
+<<<<<<< HEAD
+def sync_bpf():
+    cur_path = os.getcwd()
+    os.chdir(bpfpath)
+    print(">>> Update " + bpfpath)
+    call(["git", "add", "."])
+    call(["git", "commit", "-m", "'update cache'", "-q"])
+    call(["git", "pull", "-q"])
+    call(["git", "push", "-q"])
+    os.chdir(cur_path)
+=======
+def deploy(remote, int_branch):
+    call(["git", "push", int_branch['deploy-remote'], "+{0}:{1}".format(int_branch_name, int_branch_name)])
+>>>>>>> 024fd3acee3fca25448dbac46a1ecd907897c108
+
+
+action = sys.argv[1]
+int_branch_name = sys.argv[2]
+remote = config.get("remote", "origin")
+int_root_name = int_branch_name.split("-")[0]
+int_branch = config['integration_branches'].get(int_branch_name, "")
+if not int_branch:
+    sys.exit("%s does not exist in bpf.json" % int_branch_name)
+
+if action == "sync":
+    sync_bpf()
+    pull(remote, int_branch)
+    push(remote, int_branch)
+elif action == "pull":
+    sync_bpf()
+    pull(remote, int_branch)
+elif action == "push":
+    sync_bpf()
+    push(remote, int_branch)
+elif action == "rebuild":
+    rebuild(remote, int_branch)
+else:
+    sys.exit("invalid action " + action)
+
+#run("git checkout -q " + local_branch, echo=False)
+run("git clean -q -xfd")
