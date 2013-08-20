@@ -73,9 +73,9 @@ def sync_bpf():
     print(">>> Update " + bpfpath)
     call(["git", "status"])
     call(["git", "add", "rr-cache/*"])
-    call(["git", "commit", "-a", "-m", "'update cache'", "-q"])
-    call(["git", "pull", "-q"])
-    call(["git", "push", "-q"])
+    call(["git", "commit", "-a", "-m", "'update cache'"])
+    call(["git", "pull"])
+    call(["git", "push"])
     os.chdir(cur_path)
 
 
