@@ -106,7 +106,7 @@ if action == "update":
     integration_base = local_branch.split("-")[0]
     commits = []
     cmd = "git log --oneline {0}..HEAD".format(integration_base)
-    for commit in commands.getoutput(cmd).splitlines():
+    for commit in getoutput(cmd).splitlines():
         if commit.find("merge feature branch") > -1:
             # the first time we see the string 'merge feature branch',
             # we know we've reached the end of commits made directly in
