@@ -44,8 +44,9 @@ def rebuild(remote, int_branch):
     run("git checkout -q -B " + int_branch_name)
     for feature in int_branch['features']:
         run("git merge -q --no-ff --no-commit " + feature)
+        # the comment below must begin with "merge feature branch"
+        # "git bpf update" uses these commit names to figure things out.
         run("git commit -q -m 'merge feature branch %s'" % feature)
-
 
 def pull(remote, int_branch):
     # pull start-point
@@ -67,6 +68,12 @@ def push(remote, int_branch):
         run("git push -q {0} {1}:{2}".format(remote, feature, feature))
 
 
+def update(branch):
+    """git bpf update <feature-branch>
+    Move all commits from the current xxx-integration branch into <feature-branch>.
+    Then, rebuild the current xxx-integration.
+    """
+
 def sync_bpf():
     cur_path = os.getcwd()
     os.chdir(bpfpath)
@@ -78,11 +85,42 @@ def sync_bpf():
     call(["git", "push"])
     os.chdir(cur_path)
 
+# Always pull+push devtools repo before anything else
+sync_bpf()
 
 action = sys.argv[1]
-if action == "sync-bpf":
-    sync_bpf()
-    sys.exit()
+
+if action == "update":
+    # must be on *-integration branch
+    if not local_branch.endswith("-integration"):
+        sys.exit("git bpf update: you must have an -integration branch \n"
+                 "(with local commits) checked out when you run this command.")
+    # must specify feature branch argument
+    try:
+        feature_branch = sys.argv[2]
+    except:
+        sys.exit("git bpf update <feature-branch>: move all commits from the \n"
+                 "current -integration branch into <feature-branch>, and rebuild \n"
+                 "the -integration branch.")
+    # get commits from current -integration branch
+    integration_base = local_branch.split("-")[0]
+    commits = []
+    cmd = "git log --oneline {0}..HEAD".format(integration_base)
+    for commit in commands.getoutput(cmd).splitlines():
+        if commit.find("merge feature branch") > -1:
+            # the first time we see the string 'merge feature branch',
+            # we know we've reached the end of commits made directly in
+            # -integration.
+            break
+        commits.append(commit)
+    commits.reverse()
+    for commit in commits:
+        print(commit)
+#        commit_hash,commit_subject = commit.split(" ", 1)
+
+
+
+
 
 int_branch_name = sys.argv[2]
 remote = config.get("remote", "origin")
@@ -90,7 +128,6 @@ int_root_name = int_branch_name.split("-")[0]
 int_branch = config['integration_branches'].get(int_branch_name, "")
 if not int_branch:
     sys.exit("%s does not exist in bpf.json" % int_branch_name)
-
 if action == "sync":
     sync_bpf()
     pull(remote, int_branch)
