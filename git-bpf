@@ -115,8 +115,11 @@ if action == "update":
         commits.append(commit)
     commits.reverse()
     for commit in commits:
-        print(commit)
-#        commit_hash,commit_subject = commit.split(" ", 1)
+        commit_hash,commit_subject = commit.split(" ", 1)
+        print("NOW we would add to branch %s, the commit: %s" % (
+            feature_branch, commit))
+        cmd = "git cherry-pick %s ; git mergetool"%commit_hash
+        print ("We would use a command like this: `%s`"%cmd)
 
 
 
