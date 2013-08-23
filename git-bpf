@@ -48,6 +48,7 @@ def rebuild(remote, int_branch):
         # "git bpf update" uses these commit names to figure things out.
         run("git commit -q -m 'merge feature branch %s'" % feature)
 
+
 def pull(remote, int_branch):
     # pull start-point
     run("git checkout -q " + int_root_name, echo=False)
@@ -73,6 +74,7 @@ def update(branch):
     Move all commits from the current xxx-integration branch into <feature-branch>.
     Then, rebuild the current xxx-integration.
     """
+
 
 def sync_bpf():
     cur_path = os.getcwd()
@@ -116,19 +118,19 @@ if action == "update":
             # -integration.
             break
         commits.append(commit)
-    commits.reverse()
-    for commit in commits:
-        commit_hash,commit_subject = commit.split(" ", 1)
-        print("NOW we would add to branch %s, the commit: %s" % (
-            feature_branch, commit))
-        cmd = "git cherry-pick %s ; git mergetool"%commit_hash
-        print ("We would use a command like this: `%s`"%cmd)
-
-    print("Added %s commits to branch %s."%(len(commits), feature_branch))
-    print("Press enter if all went well; Ctrl+C to abort.")
-    raw_input()
-    action = "rebuild"
-    int_branch_name = local_branch
+    if commits:
+        commits.reverse()
+        for commit in commits:
+            commit_hash, commit_subject = commit.split(" ", 1)
+            cmd = "git cherry-pick %s ; git mergetool" % commit_hash
+            run(cmd)
+        print(">>> Added %s commits to branch %s." % (len(commits), feature_branch))
+        print(">>> Press enter if all went well; Ctrl+C to abort.")
+        raw_input()
+        action = "rebuild"
+        int_branch_name = local_branch
+    else:
+        sys.exit("No commits found in current integration branch.")
 
 if not int_branch_name:
     int_branch_name = sys.argv[2]
@@ -153,5 +155,5 @@ elif action == "rebuild":
 else:
     sys.exit("invalid action " + action)
 
-#run("git checkout -q " + local_branch, echo=False)
+# run("git checkout -q " + local_branch, echo=False)
 run("git clean -q -xfd")
