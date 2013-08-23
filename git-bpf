@@ -122,10 +122,10 @@ if action == "update":
         commits.reverse()
         for commit in commits:
             commit_hash, commit_subject = commit.split(" ", 1)
-            cmd = "git cherry-pick %s ; git mergetool" % commit_hash
+            cmd = "git cherry-pick %s" % commit_hash
             run(cmd)
         print(">>> Added %s commits to branch %s." % (len(commits), feature_branch))
-        print(">>> Press enter if all went well; Ctrl+C to abort.")
+        print("Press enter if all went well; Ctrl+C to abort.")
         raw_input()
         action = "rebuild"
         int_branch_name = local_branch
