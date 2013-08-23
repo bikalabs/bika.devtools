@@ -5,12 +5,11 @@ commands to manage branch-per-feature development
 
 - http://www.acquia.com/blog/pragmatic-guide-branch-feature-git-branching-strategy
 
-These scripts assume a certain workflow:   bpf.json specifies a list of
-integration branches, and the features they will each contain.  All 
-"git bpf" commands automatically synchronise (add, commit, pull, push) the
-"bika.devtools" repository each time they are run, before doing anything else.
-Also, if git rerere is enabled (it should be), the .git/rr-cache folder must
-be linked appropriately, to a folder inside bika.devtools/rr-cache.
+These scripts assume a certain workflow:
+
+- bpf.json specifies a list of integration branches, and the features they will each contain.  
+- All "git bpf" commands automatically sync the "bika.devtools" repository.
+- if git rerere is enabled (it should be), the .git/rr-cache folder must be linked to bika.devtools/rr-cache/xxx.
 
 ### git bpf pull xxx-integration
 
