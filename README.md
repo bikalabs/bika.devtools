@@ -9,6 +9,8 @@ These scripts assume a certain workflow:   bpf.json specifies a list of
 integration branches, and the features they will each contain.  All 
 "git bpf" commands automatically synchronise (add, commit, pull, push) the
 "bika.devtools" repository each time they are run, before doing anything else.
+Also, if git rerere is enabled (it should be), the .git/rr-cache folder must
+be linked appropriately, to a folder inside bika.devtools/rr-cache.
 
 ### git bpf pull xxx-integration
 
