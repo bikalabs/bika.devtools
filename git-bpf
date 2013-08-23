@@ -119,6 +119,7 @@ if action == "update":
             break
         commits.append(commit)
     if commits:
+        run("git checkout {0}".format(feature_branch))
         commits.reverse()
         for commit in commits:
             commit_hash, commit_subject = commit.split(" ", 1)
