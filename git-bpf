@@ -90,6 +90,9 @@ sync_bpf()
 
 action = sys.argv[1]
 
+# This is set in two possible places
+int_branch_name = ""
+
 if action == "update":
     # must be on *-integration branch
     if not local_branch.endswith("-integration"):
@@ -121,11 +124,14 @@ if action == "update":
         cmd = "git cherry-pick %s ; git mergetool"%commit_hash
         print ("We would use a command like this: `%s`"%cmd)
 
+    print("Added %s commits to branch %s."%(len(commits), feature_branch))
+    print("Press enter if all went well; Ctrl+C to abort.")
+    action = "rebuild"
+    int_branch_name = local_branch
 
+if not int_branch_name:
+    int_branch_name = sys.argv[2]
 
-
-
-int_branch_name = sys.argv[2]
 remote = config.get("remote", "origin")
 int_root_name = int_branch_name.split("-")[0]
 int_branch = config['integration_branches'].get(int_branch_name, "")
