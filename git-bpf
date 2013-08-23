@@ -126,6 +126,7 @@ if action == "update":
 
     print("Added %s commits to branch %s."%(len(commits), feature_branch))
     print("Press enter if all went well; Ctrl+C to abort.")
+    raw_input()
     action = "rebuild"
     int_branch_name = local_branch
 
