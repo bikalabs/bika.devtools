@@ -31,7 +31,7 @@ push and pull.
     - create/reset new branch xxx-integration
     - <for each feature branch: merge feature branch>
 
-### git bpf update <feature-branch>
+### git bpf update `feature-branch`
 
 All work takes place directly in the xxx-integration branch, and commits
 are also made, directly on the xxx-integration branch.
@@ -42,8 +42,8 @@ are also made, directly on the xxx-integration branch.
 
 To move/save these commits into a feature branch, run this:
 
-   - git bpf update <feature-branch-name>
+   - git bpf update `feature-branch-name`
 
-This will move the new commits into <feature-branch> and then rebuild
+This will move the new commits into `feature-branch` and then rebuild
 the xxx-integration branch.
 
