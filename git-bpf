@@ -80,6 +80,10 @@ def sync_bpf():
 
 
 action = sys.argv[1]
+if action == "sync-bpf":
+    sync_bpf()
+    sys.exit()
+
 int_branch_name = sys.argv[2]
 remote = config.get("remote", "origin")
 int_root_name = int_branch_name.split("-")[0]
