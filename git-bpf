@@ -87,8 +87,6 @@ def sync_bpf():
     call(["git", "push"])
     os.chdir(cur_path)
 
-# Always pull+push devtools repo before anything else
-sync_bpf()
 
 action = sys.argv[1]
 
