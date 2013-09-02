@@ -7,8 +7,7 @@
 # This script does not push or pull the rr_cache.
 #
 
-from subprocess import call
-from commands import getoutput
+from subprocess import call, check_output
 
 import json
 import os
@@ -28,11 +27,11 @@ except:
     sys.exit()
 
 local_repo = os.getcwd().split("/")[-1]
-local_branch = getoutput('git branch').split("* ")[-1].split("\n")[0]
+local_branch = check_output(['git', 'branch']).split("* ")[-1].split("\n")[0]
 
 
 def run(cmd, echo=True):
-    out = getoutput(cmd + " 1>/dev/null").strip()
+    out = check_output(cmd + " 1>/dev/null").strip()
     out = "\n%s" % out if out else ''
     pretty_cmd = cmd.replace(" -q ", " ")
     if echo:
@@ -109,7 +108,7 @@ if action == "update":
     integration_base = local_branch.split("-")[0]
     commits = []
     cmd = "git log --oneline {0}..HEAD".format(integration_base)
-    for commit in getoutput(cmd).splitlines():
+    for commit in check_output(cmd).splitlines():
         if commit.find("merge feature branch") > -1:
             # the first time we see the string 'merge feature branch',
             # we know we've reached the end of commits made directly in
