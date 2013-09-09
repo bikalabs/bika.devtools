@@ -80,7 +80,7 @@ class WorksheetImporter:
                 row[add_type] = {}
                 if add_type + "_Address" in row:
                     for key in ['Address', 'City', 'State', 'Zip', 'Country']:
-                        row[add_type][key] = row["%s_%s" % (add_type, key)]
+                        row[add_type][key] = str(row["%s_%s" % (add_type, key)])
 
             yield row
 
@@ -132,7 +132,7 @@ class WorksheetImporter:
         for add_type in ['Physical', 'Postal', 'Billing', 'CountryState']:
             addresses[add_type] = {}
             for key in ['Address', 'City', 'State', 'Zip', 'Country']:
-                addresses[add_type][key.lower()] = row.get("%s_%s" % (add_type, key), '')
+                addresses[add_type][key.lower()] = str(row.get("%s_%s" % (add_type, key), ''))
 
         if addresses['CountryState']['country'] == '' \
             and addresses['CountryState']['state'] == '':
@@ -349,7 +349,7 @@ class Client_Contacts(WorksheetImporter):
                 Salutation=row.get('Salutation', ''),
                 Firstname=row.get('Firstname', ''),
                 Surname=row.get('Surname', ''),
-                Username=row.get('Username', ''),
+                Username=row['Username'],
                 JobTitle=row.get('JobTitle', ''),
                 Department=row.get('Department', ''),
                 PublicationPreference=pub_pref,
@@ -360,7 +360,6 @@ class Client_Contacts(WorksheetImporter):
             self.fill_addressfields(row, contact)
             contact.unmarkCreationFlag()
             renameAfterCreation(contact)
-
             # CC Contacts
             if row['CCContacts']:
                 names = [x.strip() for x in row['CCContacts'].split(",")]
@@ -371,24 +370,21 @@ class Client_Contacts(WorksheetImporter):
                                dest_query={'portal_type': 'Contact',
                                            'getFullname': _fullname}
                                )
-
-            # Create Plone user
+            ## Create Plone user
+            username = safe_unicode(row['Username']).encode('utf-8')
             if(row['Username']):
                 try:
-                    self.portal_registration.addMember(
-                        row['Username'],
+                    member = self.context.portal_registration.addMember(
+                        username,
                         row['Password'],
                         properties={
-                            'username': row['Username'],
+                            'username': username,
                             'email': row['EmailAddress'],
                             'fullname': fullname}
-                    )
-                except:
-                    logger.info("Error adding user (already exists?): %s" %
-                                row['Username'])
-                contact.aq_parent.manage_setLocalRoles(row['Username'],
-                                                       ['Owner', ])
-
+                        )
+                except Exception as msg:
+                    logger.info("Error adding user (%s): %s" % (msg, username))
+                contact.aq_parent.manage_setLocalRoles(row['Username'], ['Owner', ])
                 # add user to Clients group
                 group = portal_groups.getGroupById('Clients')
                 group.addMember(row['Username'])
@@ -1523,59 +1519,6 @@ class Attachment_Types(WorksheetImporter):
             obj.unmarkCreationFlag()
             renameAfterCreation(obj)
 
-class Invoice_Batches(WorksheetImporter):
-
-    def Import(self):
-        folder = self.context.invoices
-        for row in self.get_rows(3):
-            _id = folder.invokeFactory('InvoiceBatch', id=tmpID())
-            obj = folder[_id]
-            if not row['title']:
-                message = "InvoiceBatch has no Title"
-                raise Exception(message)
-            if not row['start']:
-                message = "InvoiceBatch has no Start Date"
-                raise Exception(message)
-            if not row['end']:
-                message = "InvoiceBatch has no End Date"
-                raise Exception(message)
-            obj.edit(
-                title=row['title'],
-                BatchStartDate=row['start'],
-                BatchEndDate=row['end'],
-            )
-            renameAfterCreation(obj)
-
-
-class Lab_Products(WorksheetImporter):
-
-    def Import(self):
-        folder = self.context.bika_setup.bika_labproducts
-        for row in self.get_rows(3):
-            # Create a new object
-            _id = folder.invokeFactory('LabProduct', id=tmpID())
-            obj = folder[_id]
-            # Ensure that all fields are present
-            fields = [
-                'title', 'description', 'volume',
-                'unit', 'vat', 'price'
-            ]
-            for field in fields:
-                if field not in row:
-                    msg = "LabProduct requires a value for %s" % (field)
-                    raise Exception(msg)
-            # Set the values according to the row
-            obj.edit(
-                title=row['title'],
-                description=row['description'],
-                Volume=row['volume'],
-                Unit=row['unit'],
-                VAT=str(row['vat']),
-                Price=str(row['price']),
-            )
-            # Rename the object
-            renameAfterCreation(obj)
-
 
 class Reference_Samples(WorksheetImporter):
 
@@ -1834,3 +1777,57 @@ class Analysis_Requests(WorksheetImporter):
             obj.unmarkCreationFlag()
 
             self.load_analyses(obj)
+
+
+class Invoice_Batches(WorksheetImporter):
+
+    def Import(self):
+        folder = self.context.invoices
+        for row in self.get_rows(3):
+            _id = folder.invokeFactory('InvoiceBatch', id=tmpID())
+            obj = folder[_id]
+            if not row['title']:
+                message = "InvoiceBatch has no Title"
+                raise Exception(message)
+            if not row['start']:
+                message = "InvoiceBatch has no Start Date"
+                raise Exception(message)
+            if not row['end']:
+                message = "InvoiceBatch has no End Date"
+                raise Exception(message)
+            obj.edit(
+                title=row['title'],
+                BatchStartDate=row['start'],
+                BatchEndDate=row['end'],
+            )
+            renameAfterCreation(obj)
+
+
+class Lab_Products(WorksheetImporter):
+
+    def Import(self):
+        folder = self.context.bika_setup.bika_labproducts
+        for row in self.get_rows(3):
+            # Create a new object
+            _id = folder.invokeFactory('LabProduct', id=tmpID())
+            obj = folder[_id]
+            # Ensure that all fields are present
+            fields = [
+                'title', 'description', 'volume',
+                'unit', 'vat', 'price'
+            ]
+            for field in fields:
+                if field not in row:
+                    msg = "LabProduct requires a value for %s" % (field)
+                    raise Exception(msg)
+            # Set the values according to the row
+            obj.edit(
+                title=row['title'],
+                description=row['description'],
+                Volume=row['volume'],
+                Unit=row['unit'],
+                VAT=str(row['vat']),
+                Price=str(row['price']),
+            )
+            # Rename the object
+            renameAfterCreation(obj)

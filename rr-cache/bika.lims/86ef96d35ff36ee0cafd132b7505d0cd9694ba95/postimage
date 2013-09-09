@@ -81,7 +81,7 @@ class WorksheetImporter:
                 row[add_type] = {}
                 if add_type + "_Address" in row:
                     for key in ['Address', 'City', 'State', 'Zip', 'Country']:
-                        row[add_type][key] = row["%s_%s" % (add_type, key)]
+                        row[add_type][key] = str(row["%s_%s" % (add_type, key)])
 
             yield row
 
@@ -133,7 +133,7 @@ class WorksheetImporter:
         for add_type in ['Physical', 'Postal', 'Billing', 'CountryState']:
             addresses[add_type] = {}
             for key in ['Address', 'City', 'State', 'Zip', 'Country']:
-                addresses[add_type][key.lower()] = row.get("%s_%s" % (add_type, key), '')
+                addresses[add_type][key.lower()] = str(row.get("%s_%s" % (add_type, key), ''))
 
         if addresses['CountryState']['country'] == '' \
             and addresses['CountryState']['state'] == '':
@@ -373,11 +373,13 @@ class Client_Contacts(WorksheetImporter):
                                )
             ## Create Plone user
             username = safe_unicode(row['Username']).encode('utf-8')
-            if(row['Username']):
+            username = safe_unicode(row['Username']).decode('utf-8')
+            password = safe_unicode(row['Password']).decode('utf-8')
+            if(username):
                 try:
                     member = self.context.portal_registration.addMember(
                         username,
-                        row['Password'],
+                        password,
                         properties={
                             'username': username,
                             'email': row['EmailAddress'],
@@ -388,7 +390,7 @@ class Client_Contacts(WorksheetImporter):
                 contact.aq_parent.manage_setLocalRoles(row['Username'], ['Owner', ])
                 # add user to Clients group
                 group = portal_groups.getGroupById('Clients')
-                group.addMember(row['Username'])
+                group.addMember(username)
 
 
 class Container_Types(WorksheetImporter):
@@ -1520,59 +1522,6 @@ class Attachment_Types(WorksheetImporter):
             obj.unmarkCreationFlag()
             renameAfterCreation(obj)
 
-class Invoice_Batches(WorksheetImporter):
-
-    def Import(self):
-        folder = self.context.invoices
-        for row in self.get_rows(3):
-            _id = folder.invokeFactory('InvoiceBatch', id=tmpID())
-            obj = folder[_id]
-            if not row['title']:
-                message = "InvoiceBatch has no Title"
-                raise Exception(message)
-            if not row['start']:
-                message = "InvoiceBatch has no Start Date"
-                raise Exception(message)
-            if not row['end']:
-                message = "InvoiceBatch has no End Date"
-                raise Exception(message)
-            obj.edit(
-                title=row['title'],
-                BatchStartDate=row['start'],
-                BatchEndDate=row['end'],
-            )
-            renameAfterCreation(obj)
-
-
-class Lab_Products(WorksheetImporter):
-
-    def Import(self):
-        folder = self.context.bika_setup.bika_labproducts
-        for row in self.get_rows(3):
-            # Create a new object
-            _id = folder.invokeFactory('LabProduct', id=tmpID())
-            obj = folder[_id]
-            # Ensure that all fields are present
-            fields = [
-                'title', 'description', 'volume',
-                'unit', 'vat', 'price'
-            ]
-            for field in fields:
-                if field not in row:
-                    msg = "LabProduct requires a value for %s" % (field)
-                    raise Exception(msg)
-            # Set the values according to the row
-            obj.edit(
-                title=row['title'],
-                description=row['description'],
-                Volume=row['volume'],
-                Unit=row['unit'],
-                VAT=str(row['vat']),
-                Price=str(row['price']),
-            )
-            # Rename the object
-            renameAfterCreation(obj)
-
 
 class Reference_Samples(WorksheetImporter):
 
@@ -1831,3 +1780,57 @@ class Analysis_Requests(WorksheetImporter):
             obj.unmarkCreationFlag()
 
             self.load_analyses(obj)
+
+
+class Invoice_Batches(WorksheetImporter):
+
+    def Import(self):
+        folder = self.context.invoices
+        for row in self.get_rows(3):
+            _id = folder.invokeFactory('InvoiceBatch', id=tmpID())
+            obj = folder[_id]
+            if not row['title']:
+                message = "InvoiceBatch has no Title"
+                raise Exception(message)
+            if not row['start']:
+                message = "InvoiceBatch has no Start Date"
+                raise Exception(message)
+            if not row['end']:
+                message = "InvoiceBatch has no End Date"
+                raise Exception(message)
+            obj.edit(
+                title=row['title'],
+                BatchStartDate=row['start'],
+                BatchEndDate=row['end'],
+            )
+            renameAfterCreation(obj)
+
+
+class Lab_Products(WorksheetImporter):
+
+    def Import(self):
+        folder = self.context.bika_setup.bika_labproducts
+        for row in self.get_rows(3):
+            # Create a new object
+            _id = folder.invokeFactory('LabProduct', id=tmpID())
+            obj = folder[_id]
+            # Ensure that all fields are present
+            fields = [
+                'title', 'description', 'volume',
+                'unit', 'vat', 'price'
+            ]
+            for field in fields:
+                if field not in row:
+                    msg = "LabProduct requires a value for %s" % (field)
+                    raise Exception(msg)
+            # Set the values according to the row
+            obj.edit(
+                title=row['title'],
+                description=row['description'],
+                Volume=row['volume'],
+                Unit=row['unit'],
+                VAT=str(row['vat']),
+                Price=str(row['price']),
+            )
+            # Rename the object
+            renameAfterCreation(obj)
