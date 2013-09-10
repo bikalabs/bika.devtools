@@ -4,7 +4,6 @@
         "master-integration": {
             "features": [
                 "master-plone43-compat",
-                "master-tests",
                 "master-report-format"
             ]
         },
