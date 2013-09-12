@@ -43,7 +43,7 @@ def rebuild(remote, int_branch):
     run("git checkout -q " + int_root_name, echo=False)
     run("git checkout -q -B " + int_branch_name)
     for feature in int_branch['features']:
-        run("git merge -q --no-ff --no-commit " + feature)
+        run("git merge -q --squash --no-ff --no-commit " + feature)
         # the comment below must begin with "merge feature branch"
         # "git bpf update" uses these commit names to figure things out.
         run("git commit -q -m 'merge feature branch %s'" % feature)
