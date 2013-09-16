@@ -7,12 +7,12 @@
 # This script does not push or pull the rr_cache.
 #
 
-from subprocess import call
 from commands import getoutput
 
 import json
 import os
 import sys
+import subprocess as subp
 
 bpfpath = os.path.split(os.path.abspath(os.path.realpath(__file__)))[-2]
 config_path = os.path.join(bpfpath, "bpf.json")
@@ -31,42 +31,50 @@ local_repo = os.getcwd().split("/")[-1]
 local_branch = getoutput('git branch').split("* ")[-1].split("\n")[0]
 
 
-def run(cmd, echo=True):
-    out = getoutput(cmd + " 1>/dev/null").strip()
-    out = "\n%s" % out if out else ''
-    pretty_cmd = cmd.replace(" -q ", " ")
-    if echo:
-        print(">>> {0}{1}".format(pretty_cmd, out))
+def silent_call(cmd_list):
+    return subp.call(cmd_list, stdout=subp.PIPE, stderr=subp.PIPE)
+
+def call(cmd_str):
+    cmd = cmd_str.split()
+    proc = subp.Popen(cmd, stdout=subp.PIPE, stderr=subp.PIPE)
+    out = proc.communicate()[0]
+    rc = proc.returncode
+    lines = out.rstrip().split('\n')
+    print(">>> {0} ({1})".format(cmd_str, rc))
+    # print("\n".join(lines))
+    # print
+    return (rc, lines)
 
 
 def rebuild(remote, int_branch):
-    run("git checkout -q " + int_root_name, echo=False)
-    run("git checkout -q -B " + int_branch_name)
+    rc, out = call("git checkout " + int_root_name)
+    rc, out = call("git checkout -B " + int_branch_name)
     for feature in int_branch['features']:
-        run("git merge -q --squash --no-ff --no-commit " + feature)
-        # the comment below must begin with "merge feature branch"
-        # "git bpf update" uses these commit names to figure things out.
-        run("git commit -q -m 'merge feature branch %s'" % feature)
+        rc, out = call("git merge --no-ff --no-commit " + feature)
+        rc, out = call("git add .")
+        rc, out = call("git commit -a --no-edit")
+        if rc != 0:
+            sys.exit("Commit failed; run mergetool and commit to update rerere cache")
 
 
 def pull(remote, int_branch):
     # pull start-point
-    run("git checkout -q " + int_root_name, echo=False)
-    run("git pull -q {0} {1}:{2}".format(remote, int_root_name, int_root_name))
+    rc, out = call("git checkout " + int_root_name)
+    rc, out = call("git pull {0} {1}:{2}".format(remote, int_root_name, int_root_name))
     # pull all features
     for feature in int_branch['features']:
-        run("git checkout -q " + feature, echo=False)
-        run("git pull -q {0} {1}:{2}".format(remote, feature, feature))
+        rc, out = call("git checkout " + feature)
+        rc, out = call("git pull {0} {1}:{2}".format(remote, feature, feature))
 
 
 def push(remote, int_branch):
     # push start-point
-    run("git checkout -q " + int_root_name, echo=False)
-    run("git push -q {0} {1}:{2}".format(remote, int_root_name, int_root_name))
+    rc, out = call("git checkout " + int_root_name)
+    rc, out = call("git push {0} {1}:{2}".format(remote, int_root_name, int_root_name))
     # push all features
     for feature in int_branch['features']:
-        run("git checkout -q " + feature, echo=False)
-        run("git push -q {0} {1}:{2}".format(remote, feature, feature))
+        rc, out = call("git checkout " + feature)
+        rc, out = call("git push {0} {1}:{2}".format(remote, feature, feature))
 
 
 def update(branch):
@@ -80,13 +88,12 @@ def sync_bpf():
     cur_path = os.getcwd()
     os.chdir(bpfpath)
     print(">>> Update " + bpfpath)
-    call(["git", "status"])
-    call(["git", "add", "."])
-    call(["git", "commit", "-a", "-m", "update_cache"])
-    call(["git", "pull"])
-    call(["git", "push"])
+    rc, out = call("git status")
+    rc, out = call("git add .")
+    rc, out = call("git commit -a -m 'update cache'")
+    rc, out = call("git pull")
+    rc, out = call("git push")
     os.chdir(cur_path)
-
 
 action = sys.argv[1]
 
@@ -117,12 +124,12 @@ if action == "update":
             break
         commits.append(commit)
     if commits:
-        run("git checkout {0}".format(feature_branch))
+        rc, out = call("git checkout {0}".format(feature_branch))
         commits.reverse()
         for commit in commits:
             commit_hash, commit_subject = commit.split(" ", 1)
             cmd = "git cherry-pick %s" % commit_hash
-            run(cmd)
+            rc, out = call(cmd)
         print(">>> Added %s commits to branch %s." % (len(commits), feature_branch))
         print("Press enter if all went well; Ctrl+C to abort.")
         raw_input()
@@ -154,5 +161,5 @@ elif action == "rebuild":
 else:
     sys.exit("invalid action " + action)
 
-# run("git checkout -q " + local_branch, echo=False)
-run("git clean -q -xfd")
+# rc, out = call("git checkout " + local_branch)
+rc, out = call("git clean -xfd")
