@@ -9,10 +9,7 @@
         },
         "3.01a-integration": {
             "features": [
-                "981-out-of-range-adapters",
-                "invoicing",
-                "3.01a-plone43-compat",
-                "3.01a-report-format"
+                "invoicing"
             ]
         },
         "epid-integration": {
