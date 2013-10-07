@@ -243,12 +243,21 @@
       for="Products.CMFPlone.interfaces.IPloneSiteRoot"/>
 
     <adapter
+<<<<<<<
+      name="Invoice_Batches"
+      factory="bika.lims.exportimport.setupdata.Invoice_Batches"
+=======
       name="Reference_Samples"
       factory="bika.lims.exportimport.setupdata.Reference_Samples"
+>>>>>>>
       provides="bika.lims.interfaces.ISetupDataImporter"
       for="Products.CMFPlone.interfaces.IPloneSiteRoot"/>
 
     <adapter
+<<<<<<<
+      name="Lab_Products"
+      factory="bika.lims.exportimport.setupdata.Lab_Products"
+=======
       name="Samples"
       factory="bika.lims.exportimport.setupdata.Samples"
       provides="bika.lims.interfaces.ISetupDataImporter"
@@ -257,18 +266,7 @@
     <adapter
       name="Analysis_Requests"
       factory="bika.lims.exportimport.setupdata.Analysis_Requests"
-      provides="bika.lims.interfaces.ISetupDataImporter"
-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"/>
-
-    <adapter
-      name="Invoice_Batches"
-      factory="bika.lims.exportimport.setupdata.Invoice_Batches"
-      provides="bika.lims.interfaces.ISetupDataImporter"
-      for="Products.CMFPlone.interfaces.IPloneSiteRoot"/>
-
-    <adapter
-      name="Lab_Products"
-      factory="bika.lims.exportimport.setupdata.Lab_Products"
+>>>>>>>
       provides="bika.lims.interfaces.ISetupDataImporter"
       for="Products.CMFPlone.interfaces.IPloneSiteRoot"/>
 

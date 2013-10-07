@@ -333,8 +333,6 @@ class ISupplier(Interface):
 
 class ISuppliers(Interface):
     ""
-
-
 class ISupplyOrder(Interface):
     ""
 
@@ -375,6 +373,14 @@ class IIdServer(Interface):
 
     def generate_id(self, portal_type, batch_size=None):
         """ Generate a new id for 'portal_type' """
+
+
+class IReferenceWidgetVocabulary(Interface):
+    """Return values for reference widgets in AR contexts
+    """
+    def __call__(**kwargs):
+        """
+        """
 
 
 class IDisplayListVocabulary(Interface):

@@ -101,19 +101,16 @@ textarea#description,
     width:      2em;
     border: 1px solid #777;
     border-radius: .2em;
-    background: rgba( 255, 255, 255, .90 ) url(&dtml-portal_url;/spinner.gif) 50% 50% no-repeat;
+    background: rgba( 255, 255, 255, .90 )
+                url(&dtml-portal_url;/spinner.gif)
+                50% 50%
+                no-repeat;
+    opacity: 0.90;
+    -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity = 90);
+    filter: alpha(opacity = 90);
 }
-<<<<<<<
-
-body.loading {
-    overflow: hidden;
-}
-body.loading .bika-spinner {
-    display: block;
-=======
 #ajax-spinner img{
   display:none;
->>>>>>>
 }
 /* edit-bar */
 

@@ -1,0 +1,516 @@
+"""Sample represents a physical sample submitted for testing
+"""
+from AccessControl import ClassSecurityInfo
+from bika.lims import bikaMessageFactory as _
+from bika.lims.browser.widgets.datetimewidget import DateTimeWidget
+from bika.lims.config import ManageBika, PROJECTNAME
+from bika.lims.content.bikaschema import BikaSchema
+from bika.lims.interfaces import ISample
+from bika.lims.interfaces import IBikaCatalog
+from bika.lims.utils import sortable_title
+from DateTime import DateTime
+from datetime import timedelta
+from plone.indexer.decorator import indexer
+from Products.Archetypes import atapi
+from Products.Archetypes.config import REFERENCE_CATALOG
+from Products.Archetypes.public import *
+from Products.Archetypes.references import HoldingReference
+from Products.ATContentTypes.content import schemata
+from Products.ATContentTypes.lib.historyaware import HistoryAwareMixin
+from Products.ATContentTypes.utils import DT2dt,dt2DT
+from Products.CMFCore import permissions
+from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.WorkflowCore import WorkflowException
+from Products.CMFDynamicViewFTI.browserdefault import BrowserDefaultMixin
+from Products.CMFPlone.utils import safe_unicode
+from zope.interface import implements
+
+from bika.lims.browser.widgets import ReferenceWidget
+
+import sys
+import time
+
+schema = BikaSchema.copy() + Schema((
+    StringField('SampleID',
+        required = 1,
+        searchable = True,
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget = StringWidget(
+            label = _("Sample ID"),
+            description = _("The ID assigned to the client's sample by the lab"),
+            visible={'header_table': 'invisible',
+                     'edit': 'invisible',
+                     'view': 'invisible'},
+            render_own_label=True,
+        ),
+    ),
+    StringField('ClientReference',
+        searchable = True,
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget = StringWidget(
+            label = _("Client Reference"),
+            visible={'header_table': 'visible',
+                     'edit': 'visible',
+                     'view': 'visible'},
+            render_own_label=True,
+        ),
+    ),
+    StringField('ClientSampleID',
+        searchable = True,
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget = StringWidget(
+            label = _("Client SID"),
+            visible={'header_table': 'visible',
+                     'edit': 'visible',
+                     'view': 'visible'},
+            render_own_label=True,
+        ),
+    ),
+    ReferenceField('LinkedSample',
+        vocabulary_display_path_bound = sys.maxint,
+        multiValue = 1,
+        allowed_types = ('Sample',),
+        relationship = 'SampleSample',
+        referenceClass = HoldingReference,
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget = ReferenceWidget(
+            label = _("Linked Sample"),
+        ),
+    ),
+    ReferenceField('SampleType',
+        required = 1,
+        vocabulary_display_path_bound = sys.maxint,
+        allowed_types = ('SampleType',),
+        relationship = 'SampleSampleType',
+        referenceClass = HoldingReference,
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget=ReferenceWidget(
+            label = _("Sample Type"),
+            size=12,
+            render_own_label=True,
+            visible={'header_table': 'invisible',
+                     'edit': 'invisible',
+                     'view': 'visible',
+                     'add': 'visible'},
+            catalog_name='bika_setup_catalog',
+            base_query={'inactive_state': 'active'},
+            showOn=True,
+        ),
+    ),
+    ComputedField('SampleTypeTitle',
+        searchable = True,
+        expression = "here.getSampleType() and here.getSampleType().Title() or ''",
+        widget = ComputedWidget(
+            visible = False,
+        ),
+    ),
+    ReferenceField('SamplePoint',
+        vocabulary_display_path_bound = sys.maxint,
+        allowed_types = ('SamplePoint',),
+        relationship = 'SampleSamplePoint',
+        referenceClass = HoldingReference,
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget=ReferenceWidget(
+            label = _("Sample Point"),
+            size=12,
+            render_own_label=True,
+            visible={'header_table': 'invisible',
+                     'edit': 'invisible',
+                     'view': 'visible',
+                     'add': 'visible'},
+            catalog_name='bika_setup_catalog',
+            base_query={'inactive_state': 'active'},
+            showOn=True,
+        ),
+    ),
+    ComputedField('SamplePointTitle',
+        searchable = True,
+        expression = "here.getSamplePoint() and here.getSamplePoint().Title() or ''",
+        widget = ComputedWidget(
+            visible = False,
+        ),
+    ),
+    BooleanField('SamplingWorkflowEnabled',
+    ),
+    DateTimeField('DateSampled',
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget = DateTimeWidget(
+            label = _("Date Sampled"),
+            visible={'header_table': 'visible',
+                     'edit': 'invisible',
+                     'view': 'visible'},
+            render_own_label=True,
+        ),
+    ),
+    StringField('Sampler',
+        searchable=True,
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+    ),
+    DateTimeField('SamplingDate',
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget = DateTimeWidget(
+            label = _("Sampling Date"),
+            visible={'header_table': 'visible',
+                     'edit': 'invisible',
+                     'view': 'visible'},
+            render_own_label=True,
+        ),
+    ),
+    ReferenceField('SamplingDeviation',
+        vocabulary_display_path_bound = sys.maxint,
+        allowed_types = ('SamplingDeviation',),
+        relationship = 'SampleSamplingDeviation',
+        referenceClass = HoldingReference,
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget=ReferenceWidget(
+            label = _('Sampling Deviation'),
+            size=12,
+            render_own_label=True,
+            visible={'header_table': 'invisible',
+                     'edit': 'visible',
+                     'view': 'visible',
+                     'add': 'visible'},
+            catalog_name='bika_setup_catalog',
+            base_query={'inactive_state': 'active'},
+            showOn=True,
+        ),
+    ),
+    ReferenceField('SampleCondition',
+        required = 1,
+        vocabulary_display_path_bound = sys.maxint,
+        allowed_types = ('SampleCondition',),
+        relationship = 'SampleSampleCondition',
+        referenceClass = HoldingReference,
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget=ReferenceWidget(
+            label = _("Sample Condition"),
+            size=12,
+            render_own_label=True,
+            visible={'header_table': 'invisible',
+                     'edit': 'invisible',
+                     'view': 'visible',
+                     'add': 'visible'},
+            catalog_name='bika_setup_catalog',
+            base_query={'inactive_state': 'active'},
+            showOn=True,
+        ),
+    ),
+    DateTimeField('DateReceived',
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget = DateTimeWidget(
+            label = _("Date Received"),
+            visible={'header_table': 'visible',
+                     'edit': 'invisible',
+                     'view': 'visible'},
+            render_own_label=True,
+        ),
+    ),
+    ComputedField('ClientUID',
+        expression = 'context.aq_parent.UID()',
+        widget = ComputedWidget(
+            visible = False,
+        ),
+    ),
+    ComputedField('SampleTypeUID',
+        expression = 'context.getSampleType().UID()',
+        widget = ComputedWidget(
+            visible = False,
+        ),
+    ),
+    ComputedField('SamplePointUID',
+        expression = 'context.getSamplePoint() and context.getSamplePoint().UID() or None',
+        widget = ComputedWidget(
+            visible = False,
+        ),
+    ),
+    BooleanField('Composite',
+        default = False,
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget = BooleanWidget(
+            label = _("Composite"),
+            visible={'header_table': 'visible',
+                     'edit': 'visible',
+                     'view': 'visible'},
+            render_own_label=True,
+        ),
+    ),
+    DateTimeField('DateExpired',
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget = DateTimeWidget(
+            label = _("Date Expired"),
+            visible={'header_table': 'visible',
+                     'edit': 'visible',
+                     'view': 'visible'},
+            render_own_label=True,
+        ),
+    ),
+    ComputedField('DisposalDate',
+        expression = 'context.disposal_date()',
+        widget = ComputedWidget(
+            visible={'header_table': 'visible',
+                     'edit': 'invisible',
+                     'view': 'visible'},
+            render_own_label=True,
+        ),
+    ),
+    DateTimeField('DateDisposed',
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget = DateTimeWidget(
+            label = _("Date Disposed"),
+            visible={'header_table': 'visible',
+                     'edit': 'invisible',
+                     'view': 'visible'},
+            render_own_label=True,
+        ),
+    ),
+    BooleanField('AdHoc',
+        default=False,
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget=BooleanWidget(
+            label=_("Ad-Hoc"),
+            visible={'header_table': 'visible',
+                     'edit': 'visible',
+                     'view': 'visible'},
+            render_own_label=True,
+        ),
+    ),
+    TextField('Remarks',
+        searchable=True,
+        default_content_type='text/x-web-intelligent',
+<<<<<<<
+        allowable_content_types = ('text/plain', ),
+        default_output_type="text/plain",
+=======
+        allowable_content_types=('text/x-web-intelligent',),
+        default_output_type="text/html",
+>>>>>>>
+        mode="rw",
+        read_permission=permissions.View,
+        write_permission=permissions.ModifyPortalContent,
+        widget=TextAreaWidget(
+            macro="bika_widgets/remarks",
+            label=_('Remarks'),
+            append_only=True,
+        ),
+    ),
+))
+
+
+schema['title'].required = False
+
+
+class Sample(BaseFolder, HistoryAwareMixin):
+    implements(ISample)
+    security = ClassSecurityInfo()
+    displayContentsTab = False
+    schema = schema
+
+    _at_rename_after_creation = True
+    def _renameAfterCreation(self, check_auto_id=False):
+        from bika.lims.idserver import renameAfterCreation
+        renameAfterCreation(self)
+
+    def _getCatalogTool(self):
+        from bika.lims.catalog import getCatalog
+        return getCatalog(self)
+
+    def Title(self):
+        """ Return the Sample ID as title """
+        return safe_unicode(self.getId()).encode('utf-8')
+
+    def getContactTitle(self):
+        return ""
+
+    def getClientTitle(self):
+        proxies = self.getAnalysisRequests()
+        if not proxies:
+            return ""
+        value = proxies[0].aq_parent.Title()
+        return value
+
+    def getProfileTitle(self):
+        return ""
+
+    def getAnalysisCategory(self):
+        analyses = []
+        for ar in self.getAnalysisRequests():
+            analyses += list(ar.getAnalyses(full_objects=True))
+        value = []
+        for analysis in analyses:
+            val = analysis.getCategoryTitle()
+            if val not in value:
+                value.append(val)
+        return value
+
+    def getAnalysisService(self):
+        analyses = []
+        for ar in self.getAnalysisRequests():
+            analyses += list(ar.getAnalyses(full_objects=True))
+        value = []
+        for analysis in analyses:
+            val = analysis.getServiceTitle()
+            if val not in value:
+                value.append(val)
+        return value
+
+    def getAnalysts(self):
+        analyses = []
+        for ar in self.getAnalysisRequests():
+            analyses += list(ar.getAnalyses(full_objects=True))
+        value = []
+        for analysis in analyses:
+            val = analysis.getAnalyst()
+            if val not in value:
+                value.append(val)
+        return value
+
+    # Forms submit Title Strings which need
+    # to be converted to objects somewhere along the way...
+    def setSampleType(self, value, **kw):
+        """ Accept Title or UID, and convert SampleType title to UID
+        before saving.
+        """
+        bsc = getToolByName(self, 'bika_setup_catalog')
+        sampletypes = bsc(portal_type = 'SampleType', title = value)
+        if sampletypes:
+            value = sampletypes[0].UID
+        else:
+            sampletypes = bsc(portal_type = 'SampleType', UID = value)
+            if sampletypes:
+                value = sampletypes[0].UID
+            else:
+                value = None
+        for ar in self.getAnalysisRequests():
+            ar.Schema()['SampleType'].set(ar, value)
+        return self.Schema()['SampleType'].set(self, value)
+
+    # Forms submit Title Strings which need
+    # to be converted to objects somewhere along the way...
+    def setSamplePoint(self, value, **kw):
+        """ Accept Title or UID, and convert SampleType title to UID
+        before saving.
+        """
+        bsc = getToolByName(self, 'bika_setup_catalog')
+        sampletypes = bsc(portal_type = 'SamplePoint', title = value)
+        if sampletypes:
+            value = sampletypes[0].UID
+        else:
+            sampletypes = bsc(portal_type = 'SamplePoint', UID = value)
+            if sampletypes:
+                value = sampletypes[0].UID
+            else:
+                value = None
+        for ar in self.getAnalysisRequests():
+            ar.Schema()['SamplePoint'].set(ar, value)
+        return self.Schema()['SamplePoint'].set(self, value)
+
+    def setClientReference(self, value, **kw):
+        """ Set the field on Analysis Requests.
+        """
+        for ar in self.getAnalysisRequests():
+            ar.Schema()['ClientReference'].set(ar, value)
+        self.Schema()['ClientReference'].set(self, value)
+
+    def setClientSampleID(self, value, **kw):
+        """ Set the field on Analysis Requests.
+        """
+        for ar in self.getAnalysisRequests():
+            ar.Schema()['ClientSampleID'].set(ar, value)
+        self.Schema()['ClientSampleID'].set(self, value)
+
+    def setAdHoc(self, value, **kw):
+        """ Set the field on Analysis Requests.
+        """
+        for ar in self.getAnalysisRequests():
+            ar.Schema()['AdHoc'].set(ar, value)
+        self.Schema()['AdHoc'].set(self, value)
+
+    def setComposite(self, value, **kw):
+        """ Set the field on Analysis Requests.
+        """
+        for ar in self.getAnalysisRequests():
+            ar.Schema()['Composite'].set(ar, value)
+        self.Schema()['Composite'].set(self, value)
+
+    security.declarePublic('getAnalysisRequests')
+    def getAnalysisRequests(self):
+        tool = getToolByName(self, REFERENCE_CATALOG)
+        ar = ''
+        ars = []
+        uids = [uid for uid in
+                tool.getBackReferences(self, 'AnalysisRequestSample')]
+        for uid in uids:
+            reference = uid
+            ar = tool.lookupObject(reference.sourceUID)
+            ars.append(ar)
+        return ars
+
+    security.declarePublic('getAnalyses')
+    def getAnalyses(self, contentFilter):
+        """ return list of all analyses against this sample
+        """
+        analyses = []
+        for ar in self.getAnalysisRequests():
+            analyses += ar.getAnalyses(**contentFilter)
+        return analyses
+
+    def disposal_date(self):
+        """ Calculate the disposal date by returning the latest
+            disposal date in this sample's partitions """
+
+        parts = self.objectValues("SamplePartition")
+        dates = []
+        for part in parts:
+            date = part.getDisposalDate()
+            if date:
+                dates.append(date)
+        if dates:
+            dis_date = dt2DT(max([DT2dt(date) for date in dates]))
+        else:
+            dis_date = None
+        return dis_date
+
+    def getLastARNumber(self):
+        ARs = self.getBackReferences("AnalysisRequestSample")
+        prefix = self.getSampleType().getPrefix()
+        ar_ids = [AR.id for AR in ARs if AR.id.startswith(prefix)]
+        ar_ids.sort()
+        try:
+            last_ar_number = int(ar_ids[-1].split("-R")[-1])
+        except:
+            return 0
+        return last_ar_number
+
+atapi.registerType(Sample, PROJECTNAME)

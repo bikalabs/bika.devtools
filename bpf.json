@@ -10,6 +10,7 @@
         "3.01a-integration": {
             "features": [
                 "invoicing"
+                "header_table"
             ]
         },
         "epid-integration": {

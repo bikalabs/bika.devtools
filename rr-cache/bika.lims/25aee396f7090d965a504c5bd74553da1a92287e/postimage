@@ -1,0 +1,51 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  i18n:domain="bika">
+
+  <head tal:define="portal context/@@plone_portal_state/portal;">
+      <script type="text/javascript"
+          tal:attributes="src python:portal.absolute_url() + '/bika_widgets/datetimewidget.js'"></script>
+      <script type="text/javascript"
+          tal:attributes="src python:portal.absolute_url() + '/bika_widgets/referencewidget.js'"></script>
+  </head>
+
+  <body
+    tal:define="portal context/@@plone_portal_state/portal;
+                sublists python:view.sublists('edit');
+                errors view/errors"
+    tal:condition="sublists">
+    <form method="post" name="header_form">
+      <input type="hidden" name="header_table_submitted" value="1" />
+      <span tal:replace="structure context/@@authenticator/authenticator"/>
+      <table class="header_table">
+        <tr tal:repeat="row_nr python:range(len(sublists[0]))">
+          <tal:repeat repeat="col_nr python:range(3)">
+            <tal:print_blanks condition="python:len(sublists[col_nr]) <= row_nr">
+              <td tal:attributes="class python:row_nr%2 and 'key odd' or 'key even'">&nbsp;</td>
+              <td tal:attributes="class python:row_nr%2 and 'value odd' or 'value even'">&nbsp;</td>
+            </tal:print_blanks>
+            <tal:skip_blanks condition="python:len(sublists[col_nr]) > row_nr">
+              <tal:action define='action python:sublists[col_nr][row_nr]'>
+                <td tal:attributes="class python:row_nr%2 and 'key odd' or 'key even'">
+                  <span
+                    tal:replace="python:action['widget'].label"/>&nbsp;
+                  <span class="fieldRequired"
+                        tal:condition="python:action['field'].required and action['mode'] == 'edit'"
+                        title="Required"
+                        i18n:attributes="title title_required;"> </span>
+                </td>
+                <td tal:attributes="class python:row_nr%2 and 'value odd' or 'value even'">
+                  <metal:field use-macro="python:context.widget(
+                                                     action['field'].getName(),
+                                                     mode=action['mode'])"/>
+                </td>
+              </tal:action>
+            </tal:skip_blanks>
+          </tal:repeat>
+        </tr>
+      </table>
+    </form>
+  </body>
+</html>

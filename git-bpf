@@ -116,14 +116,18 @@ if action == "update":
     integration_base = local_branch.split("-")[0]
     commits = []
     cmd = "git log --oneline {0}..HEAD".format(integration_base)
-    for commit in getoutput(cmd).splitlines():
-        if commit.find("merge feature branch") > -1:
-            # the first time we see the string 'merge feature branch',
+    lines = getoutput(cmd).splitlines()
+    for commit in lines:
+        if commit.find("Merge branch") > -1:
+            # the first time we see this string,
             # we know we've reached the end of commits made directly in
             # -integration.
             break
         commits.append(commit)
     if commits:
+        print "\n".join(commits)
+        print("Cancel now if you do not want these %s commits to be merged into %s"%(len(commits), feature_branch))
+        raw_input()
         rc, out = call("git checkout {0}".format(feature_branch))
         commits.reverse()
         for commit in commits:
@@ -131,8 +135,6 @@ if action == "update":
             cmd = "git cherry-pick %s" % commit_hash
             rc, out = call(cmd)
         print(">>> Added %s commits to branch %s." % (len(commits), feature_branch))
-        print("Press enter if all went well; Ctrl+C to abort.")
-        raw_input()
         action = "rebuild"
         int_branch_name = local_branch
     else:

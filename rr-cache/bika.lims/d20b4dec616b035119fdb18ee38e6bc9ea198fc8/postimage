@@ -2,30 +2,23 @@ from AccessControl import getSecurityManager
 from bika.lims import bikaMessageFactory as _
 from bika.lims import PMF
 from bika.lims.adapters.widgetvisibility import WidgetVisibility as _WV
+from bika.lims.adapters.referencewidgetvocabulary import DefaultReferenceWidgetVocabulary
 from bika.lims.browser import BrowserView
 from bika.lims.browser.analyses import AnalysesView
 from bika.lims.browser.analyses import QCAnalysesView
 from bika.lims.browser.bika_listing import BikaListingView
 from bika.lims.browser.bika_listing import WorkflowAction
-from bika.lims.browser.bika_listing import WorkflowAction
 from bika.lims.browser.log import LogView
 from bika.lims.browser.publish import doPublish
 from bika.lims.browser.sample import SamplePartitionsView
+from bika.lims.browser.header_table import HeaderTableView
 from bika.lims.config import POINTS_OF_CAPTURE
-<<<<<<<
-=======
-from bika.lims.config import VERIFIED_STATES
->>>>>>>
 from bika.lims.content.analysisrequest import schema as AnalysisRequestSchema
 from bika.lims.idserver import renameAfterCreation
 from bika.lims.interfaces import IAnalysisRequest
 from bika.lims.interfaces import IAnalysisRequestAddView
 from bika.lims.interfaces import IDisplayListVocabulary
-<<<<<<<
 from bika.lims.interfaces import IFieldIcons
-=======
-from bika.lims.interfaces import IInvoiceView
->>>>>>>
 from bika.lims.permissions import *
 from bika.lims.subscribers import doActionFor
 from bika.lims.utils import changeWorkflowState
@@ -33,10 +26,7 @@ from bika.lims.utils import createPdf
 from bika.lims.utils import encode_header
 from bika.lims.utils import getUsers
 from bika.lims.utils import isActive
-<<<<<<<
-=======
 from bika.lims.utils import logged_in_client
->>>>>>>
 from bika.lims.utils import tmpID
 from bika.lims.utils import to_unicode as _u
 from bika.lims.vocabularies import CatalogVocabulary
@@ -56,10 +46,7 @@ from Products.CMFPlone.utils import safe_unicode
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from zope.component import adapts
 from zope.component import getAdapter
-<<<<<<<
-=======
 from zope.component import getAdapters
->>>>>>>
 from zope.i18n.locales import locales
 from zope.interface import implements
 
@@ -177,8 +164,13 @@ class AnalysisRequestWorkflowAction(WorkflowAction):
                     analysis.reindexObject()
 
             if new:
-                ar_state = workflow.getInfoFor(ar, 'review_state')
                 for analysis in new:
+                    # if the AR has progressed past sample_received, we need to bring it back.
+                    ar_state = workflow.getInfoFor(ar, 'review_state')
+                    if ar_state in ('attachment_due', 'to_be_verified'):
+                        workflow.doActionFor(ar, 'revert')
+                        ar_state = workflow.getInfoFor(ar, 'review_state')
+                    # Then we need to forward new analyses state
                     analysis.updateDueDate()
                     changeWorkflowState(analysis, 'bika_analysis_workflow', ar_state)
 
@@ -648,8 +640,7 @@ class AnalysisRequestViewView(BrowserView):
         for cc in contacts:
             ccemails.append("%s &lt;<a href='mailto:%s'>%s</a>&gt;" \
                 % (cc.Title(), cc.getEmailAddress(), cc.getEmailAddress()))
-        cc_uids = [c.UID() for c in contacts]
-        cc_titles = [c.Title() for c in contacts]
+
         emails = self.context.getCCEmails()
         if type(emails) == str:
             emails = emails and [emails,] or []
@@ -659,286 +650,8 @@ class AnalysisRequestViewView(BrowserView):
             cc_emails.append(cc)
             cc_hrefs.append("<a href='mailto:%s'>%s</a>"%(cc, cc))
 
-        # Some sample fields are editable here
-        if workflow.getInfoFor(sample, 'cancellation_state') == "cancelled":
-            allow_sample_edit = False
-            allow_ar_edit = False
-        else:
-            edit_states = ['to_be_sampled', 'to_be_preserved', 'sample_due']
-            ar_edit_states = ['sample_registered', 'to_be_sampled', 'sampled',
-                              'to_be_preserved', 'sample_due', 'attachment_due',
-                              'sample_received', 'to_be_verified']
-            allow_sample_edit = checkPermission(EditSample, sample) \
-                and workflow.getInfoFor(sample, 'review_state') in edit_states
-            allow_ar_edit = checkPermission(EditAR, self.context) \
-                and workflow.getInfoFor(self.context, 'review_state') in ar_edit_states \
-                and workflow.getInfoFor(self.context, 'cancellation_state') == 'active'
-
-        SamplingWorkflowEnabled =\
-            self.context.bika_setup.getSamplingWorkflowEnabled()
-        samplers = getUsers(sample, ['Sampler', 'LabManager', 'Manager'])
-
-        samplingdeviations = DisplayList(
-            [(sd.UID, sd.title) for sd \
-             in bsc(portal_type = 'SamplingDeviation',
-                    inactive_state = 'active')])
-
-        sampleconditions = DisplayList(
-            [(sc.UID, sc.title) for sc \
-             in bsc(portal_type = 'SampleCondition',
-                    inactive_state = 'active')])
-
-        batch = self.context.getBatch()
-        if allow_ar_edit:
-            contactlabel = "<a href='#' id='open_cc_browser'>%s</a>" % \
-                          (self.context.translate(_('Contact Person')))
-        else:
-            contactlabel = self.context.translate(_('Contact Person'))
-
-        self.header_columns = 3
-        self.header_rows = [
-            {'id': 'SampleID',
-             'title': _('Sample ID'),
-             'allow_edit': False,
-             'value': "<a href='%s'>%s</a>"%(sample.absolute_url(), sample.id),
-             'condition':True,
-             'type': 'text'},
-            {'id': 'BatchID',
-             'title': _('Batch ID'),
-             'allow_edit': False,
-             'value': batch and batch.getBatchID() or '',
-             'condition':True,
-             'type': 'text'},
-            {'id': 'Contact',
-             'title': contactlabel,
-             'allow_edit': False,
-             'value': "<input name='cc_uids' type='hidden' id='cc_uids' value='%s'/>\
-                       <a href='%s'><span name='primary_contact' id='primary_contact' value='%s'>%s</span></a>\
-                       &lt;<a href='mailto:%s'>%s</a>&gt;<br/>\
-                       <span name='cc_titles' id='cc_titles' value='%s'>%s</span>"\
-                       %(",".join(cc_uids),
-                         contact.absolute_url(),
-                         contact.UID(),
-                         contact.Title(),
-                         contact.getEmailAddress(),
-                         contact.getEmailAddress(),
-                         "; ".join(cc_titles),
-                         "<br/> ".join(ccemails)),
-             'condition':True,
-             'type': 'text'},
-            {'id': 'ClientSampleID',
-             'title': _('Client SID'),
-             'allow_edit': allow_ar_edit,
-             'value': sample.getClientSampleID(),
-             'condition':True,
-             'type': 'text'},
-            {'id': 'ClientReference',
-             'title': _('Client Reference'),
-             'allow_edit': allow_ar_edit,
-             'value': sample.getClientReference(),
-             'condition':True,
-             'type': 'text'},
-            {'id': 'ClientOrderNumber',
-             'title': _('Client Order'),
-             'allow_edit': allow_ar_edit,
-             'value': self.context.getClientOrderNumber(),
-             'condition':True,
-             'type': 'text'},
-            {'id': 'SampleType',
-             'title': _('Sample Type'),
-             'allow_edit': allow_sample_edit,
-             'value': st and st.Title() or '',
-             'condition':True,
-             'type': 'text',
-             'required': True},
-            {'id': 'SampleMatrix',
-             'title': _('Sample Matrix'),
-             'allow_edit': allow_sample_edit,
-             'value': st.getSampleMatrix() and st.getSampleMatrix().Title() or '',
-             'condition':True,
-             'type': 'text'},
-            {'id': 'SamplePoint',
-             'title': _('Sample Point'),
-             'allow_edit': allow_sample_edit,
-             'value': sp and sp.Title() or '',
-             'condition':True,
-             'type': 'text'},
-            {'id': 'Creator',
-             'title': PMF('Creator'),
-             'allow_edit': False,
-             'value': self.user_fullname(self.context.Creator()),
-             'condition':True,
-             'type': 'text'},
-            {'id': 'DateCreated',
-             'title': PMF('Date Created'),
-             'allow_edit': False,
-             'value': self.context.created(),
-             'condition':True,
-             'formatted_value': self.ulocalized_time(self.context.created()),
-             'type': 'text'},
-            {'id': 'SamplingDate',
-             'title': _('Sampling Date'),
-             'allow_edit': allow_sample_edit,
-             'value': self.ulocalized_time(
-                sample.getSamplingDate(), long_format=1),
-             'formatted_value': self.ulocalized_time(
-                self.context.getSamplingDate()),
-             'condition':True,
-             'class': 'datepicker',
-             'type': 'text'},
-            {'id': 'DateSampled',
-             'title': _('Date Sampled'),
-             'allow_edit': allow_sample_edit,
-             'value': sample.getDateSampled() and self.ulocalized_time(
-                sample.getDateSampled()) or '',
-             'formatted_value': sample.getDateSampled() and self.ulocalized_time(
-                sample.getDateSampled()) or '',
-             'condition':SamplingWorkflowEnabled,
-             'class': 'datepicker',
-             'type': 'text',
-             'required': True},
-            {'id': 'Sampler',
-             'title': _('Sampler'),
-             'allow_edit': allow_sample_edit,
-             'value': sample.getSampler(),
-             'formatted_value': sample.getSampler(),
-             'condition':SamplingWorkflowEnabled,
-             'vocabulary': samplers,
-             'type': 'choices',
-             'required': True},
-            {'id': 'SamplingDeviation',
-             'title': _('Sampling Deviation'),
-             'allow_edit': allow_sample_edit,
-             'value': sample.getSamplingDeviation() and sample.getSamplingDeviation().UID() or '',
-             'formatted_value': sample.getSamplingDeviation() and sample.getSamplingDeviation().Title() or '',
-             'condition':True,
-             'vocabulary': samplingdeviations,
-             'type': 'choices'},
-            {'id': 'SampleCondition',
-             'title': _('Sample Condition'),
-             'allow_edit': allow_sample_edit,
-             'value': sample.getSampleCondition() and sample.getSampleCondition().UID() or '',
-             'formatted_value': sample.getSampleCondition() and sample.getSampleCondition().Title() or '',
-             'condition':True,
-             'vocabulary': sampleconditions,
-             'type': 'choices'},
-            {'id': 'DateReceived',
-             'title': _('Date Received'),
-             'allow_edit': False,
-             'value': self.context.getDateReceived(),
-             'formatted_value': self.ulocalized_time(self.context.getDateReceived()),
-             'condition':True,
-             'type': 'text'},
-            {'id': 'Composite',
-             'title': _('Composite'),
-             'allow_edit': allow_sample_edit,
-             'value': sample.getComposite(),
-             'condition':True,
-             'type': 'boolean'},
-            {'id': 'AdHoc',
-             'title': _('Ad-Hoc'),
-             'allow_edit': allow_sample_edit,
-             'value': sample.getAdHoc(),
-             'condition':True,
-             'type': 'boolean'},
-            {'id': 'InvoiceExclude',
-             'title': _('Invoice Exclude'),
-             'allow_edit': allow_ar_edit,
-             'value': self.context.getInvoiceExclude(),
-             'condition':True,
-             'type': 'boolean'},
-            {'id': 'ReportDryMatter',
-             'title': _('Report as Dry Matter'),
-             'allow_edit': allow_sample_edit,
-             'value': self.context.getReportDryMatter(),
-             'condition':self.context.bika_setup.getDryMatterService(),
-             'type': 'boolean'},
-        ]
-        if allow_sample_edit or allow_ar_edit:
-            self.header_buttons = [{'name':'save_button', 'title':_('Save')}]
-
-        ## handle_header table submit
-        if form.get('header_submitted', None):
-            plone.protect.CheckAuthenticator(form)
-            message = None
-            values = {
-                'CCContact':form.get('cc_uids','').split(",")
-            }
-            for row in [r for r in self.header_rows if r['allow_edit']]:
-                value = _u(urllib.unquote_plus(form.get(row['id'], '')))
-                if row['id'] == 'SampleType':
-                    if not value:
-                        message = PMF(
-                            u'error_required',
-                            default=u'${name} is required, please correct.',
-                            mapping={'name': _('Sample Type')})
-                        break
-                    st = bsc(portal_type='SampleType', title=value)
-                    if st and len(st) == 1:
-                        value = st[0].UID
-                    else:
-                        message = _("${sampletype} is not a valid sample type",
-                                    mapping={'sampletype':value})
-                        break
-
-                elif row['id'] == 'SamplePoint':
-                    value = value.replace("%s: " % _("Lab"), '')
-                    if value:
-                        sp = bsc(portal_type='SamplePoint', title=value)
-                        if sp and len(sp) == 1:
-                            value = sp[0].UID
-                        else:
-                            message = _("${samplepoint} is not a valid sample point",
-                                        mapping={'samplepoint': value})
-                            break
-
-                elif row['id'] == 'SamplingDeviation':
-                    if value:
-                        sd = bsc(portal_type='SamplingDeviation', title=value)
-                        if sd and len(sd) == 1:
-                            value = sd[0].UID
-                        else:
-                            message = _("${samplingdeviation} is not a valid sample point",
-                                        mapping={'samplingdeviation': value})
-                            break
-
-                values[row['id']] = value
-
-            # boolean - checkboxes are 'true'/'on' or 'false'/missing in form.
-            for row in [r for r in self.header_rows if r.get('type', '') == 'boolean']:
-                value = form.get(row['id'], 'false')
-                values[row['id']] = value == 'true' and True or value == 'on' and True or False
-
-            if not message:
-                self.context.edit(**values)
-                self.context.reindexObject()
-                sample.edit(**values)
-                sample.reindexObject()
-                ars = sample.getAnalysisRequests()
-                # Analyses and AnalysisRequets have calculated fields
-                # that are indexed; re-index all these objects.
-                for ar in ars:
-                    ar.reindexObject()
-                    analyses = sample.getAnalyses({'review_state':'to_be_sampled'})
-                    for a in analyses:
-                        a.getObject().reindexObject()
-                message = PMF("Changes saved.")
-
-            # If this sample was "To Be Sampled", and the
-            # Sampler and DateSampled fields were completed,
-            # do the Sampled transition.
-            if workflow.getInfoFor(sample, "review_state") == "to_be_sampled" \
-               and form.get("Sampler", None) \
-               and form.get("DateSampled", None):
-                # This transition does not invoke the regular WorkflowAction
-                # in analysisrequest.py
-                workflow.doActionFor(sample, "sample")
-                sample.reindexObject()
-
-            self.context.plone_utils.addPortalMessage(message, 'info')
-            url = self.context.absolute_url().split("?")[0]
-            if len(url) > 1:
-                self.request.RESPONSE.redirect(url)
+        ## render header table
+        self.header_table = HeaderTableView(self.context, self.request)
 
         ## Create Partitions View for this ARs sample
         p = SamplePartitionsView(self.context.getSample(), self.request)
@@ -1307,22 +1020,6 @@ class AnalysisRequestAddView(AnalysisRequestViewView):
         adapter = getAdapter(self.context.aq_parent, name='getContacts')
         return adapter()
 
-    def getCCsForContact(self, contact_uid, **kwargs):
-        """Get the default CCs for a particular client contact.  Used
-        once in form creation. #XXX search and destroy: cc_titles, cc_uids
-        """
-        uc = getToolByName(self.context, 'uid_catalog')
-        contact = uc(UID=contact_uid)
-        contacts = []
-        if contact:
-            contact = contact and contact[0].getObject() or None
-            contacts = [{'title': x.Title(), 'uid': x.UID()} for x in
-                        contact.getCCContact()]
-        if kwargs.get('json', ''):
-            return json.dumps(contacts)
-        else:
-            return contacts
-
     def getWidgetVisibility(self):
         adapter = getAdapter(self.context, name='getWidgetVisibility')
         return adapter()
@@ -1498,6 +1195,7 @@ class AnalysisRequestAnalysesView(BikaListingView):
         p.allow_edit = False
         p.form_id = "parts"
         p.show_select_column = False
+        p.show_table_footer = False
         p.review_states[0]['transitions'] = [{'id': 'empty'}, ]  # none
         p.review_states[0]['custom_actions'] = []
         p.review_states[0]['columns'] = ['PartTitle',
@@ -1685,234 +1383,6 @@ class AnalysisRequestResultsNotRequestedView(AnalysisRequestManageResultsView):
         else:
             return self.template()
 
-class AnalysisRequestSelectCCView(BikaListingView):
-
-    template = ViewPageTemplateFile("templates/ar_select_cc.pt")
-
-    def __init__(self, context, request):
-        super(AnalysisRequestSelectCCView, self).__init__(context, request)
-        self.icon = self.portal_url + "/++resource++bika.lims.images/contact_big.png"
-        self.title = _("Contacts to CC")
-        self.description = _("Select the contacts that will receive analysis results for this request.")
-        self.catalog = "portal_catalog"
-
-        # c is the Context inside of which we will search for Contacts.
-        c = None
-        if context.portal_type == 'Batch':
-            if hasattr(context, 'getClientUID'):
-                client = self.portal_catalog(portal_type='Client', UID=context.getClientUID())
-                if client:
-                    c = client[0].getObject()
-                else:
-                    c = context
-            else:
-                c = context
-        elif context.portal_type == 'AnalysisRequest':
-            c = context.aq_parent
-        if not c:
-            c = context
-
-        self.contentFilter = {'portal_type': 'Contact',
-                              'sort_on':'sortable_title',
-                              'inactive_state': 'active',
-                              'path': {"query": "/".join(c.getPhysicalPath()),
-                                       "level" : 0 }
-                              }
-
-        self.show_sort_column = False
-        self.show_select_row = False
-        self.show_workflow_action_buttons = True
-        self.show_select_column = True
-        self.pagesize = 25
-        self.form_id = "select_cc"
-
-        request.set('disable_border', 1)
-
-        self.columns = {
-            'Fullname': {'title': _('Full Name'),
-                         'index': 'getFullname'},
-            'EmailAddress': {'title': _('Email Address')},
-            'BusinessPhone': {'title': _('Business Phone')},
-            'MobilePhone': {'title': _('Mobile Phone')},
-        }
-        self.review_states = [
-            {'id':'default',
-             'title': _('All'),
-             'contentFilter':{},
-             'columns': ['Fullname',
-                         'EmailAddress',
-                         'BusinessPhone',
-                         'MobilePhone'],
-             'transitions': [{'id':'empty'}, ], # none
-             'custom_actions':[{'id': 'save_selection_button', 'title': 'Save selection'}, ] # do not translate this title.
-             }
-        ]
-
-    def folderitems(self, full_objects = False):
-        pc = getToolByName(self.context, 'portal_catalog')
-        self.contentsMethod = pc
-        old_items = BikaListingView.folderitems(self)
-        items = []
-        for item in old_items:
-            if not item.has_key('obj'):
-                items.append(item)
-                continue
-            obj = item['obj']
-            if obj.UID() in self.request.get('hide_uids', ()):
-                continue
-            item['Fullname'] = obj.getFullname()
-            item['EmailAddress'] = obj.getEmailAddress()
-            item['BusinessPhone'] = obj.getBusinessPhone()
-            item['MobilePhone'] = obj.getMobilePhone()
-            if self.request.get('selected_uids', '').find(item['uid']) > -1:
-                item['selected'] = True
-            items.append(item)
-        return items
-
-class AnalysisRequestSelectSampleView(BikaListingView):
-
-    template = ViewPageTemplateFile("templates/ar_select_sample.pt")
-
-    def __init__(self, context, request):
-        super(AnalysisRequestSelectSampleView, self).__init__(context, request)
-        self.icon = self.portal_url + "/++resource++bika.lims.images/sample_big.png"
-        self.title = _("Select Sample")
-        self.description = _("Select a sample to create a secondary AR")
-        c = context.portal_type == 'AnalysisRequest' and context.aq_parent or context
-        self.catalog = "bika_catalog"
-        self.contentFilter = {'portal_type': 'Sample',
-                              'sort_on':'id',
-                              'sort_order': 'reverse',
-                              'review_state': ['to_be_sampled', 'to_be_preserved',
-                                               'sample_due', 'sample_received'],
-                              'cancellation_state': 'active',
-                              'path': {"query": "/".join(c.getPhysicalPath()),
-                                       "level" : 0 }
-                              }
-        self.show_sort_column = False
-        self.show_select_row = False
-        self.show_select_column = False
-        self.show_workflow_action_buttons = False
-        self.form_id = "select_sample"
-
-        self.pagesize = 25
-
-        request.set('disable_border', 1)
-
-        self.columns = {
-            'SampleID': {'title': _('Sample ID'),
-                         'index': 'getSampleID', },
-            'ClientSampleID': {'title': _('Client SID'),
-                               'index': 'getClientSampleID', },
-            'ClientReference': {'title': _('Client Reference'),
-                                'index': 'getClientReference', },
-            'SampleTypeTitle': {'title': _('Sample Type'),
-                                'index': 'getSampleTypeTitle', },
-            'SamplePointTitle': {'title': _('Sample Point'),
-                                 'index': 'getSamplePointTitle', },
-            'DateReceived': {'title': _('Date Received'),
-                             'index': 'getDateReceived', },
-            'SamplingDate': {'title': _('Sampling Date'),
-                             'index': 'getSamplingDate', },
-            'state_title': {'title': _('State'),
-                            'index': 'review_state', },
-        }
-
-        self.review_states = [
-            {'id':'default',
-             'contentFilter':{},
-             'title': _('All Samples'),
-             'columns': ['SampleID',
-                         'ClientReference',
-                         'ClientSampleID',
-                         'SampleTypeTitle',
-                         'SamplePointTitle',
-                         'SamplingDate',
-                         'state_title']},
-            {'id':'due',
-             'title': _('Sample Due'),
-             'contentFilter': {'review_state': 'sample_due'},
-             'columns': ['SampleID',
-                         'ClientReference',
-                         'ClientSampleID',
-                         'SampleTypeTitle',
-                         'SamplePointTitle',
-                         'SamplingDate']},
-            {'id':'sample_received',
-             'title': _('Sample received'),
-             'contentFilter': {'review_state': 'sample_received'},
-             'columns': ['SampleID',
-                         'ClientReference',
-                         'ClientSampleID',
-                         'SampleTypeTitle',
-                         'SamplePointTitle',
-                         'SamplingDate',
-                         'DateReceived']},
-        ]
-
-    def folderitems(self, full_objects = False):
-        items = BikaListingView.folderitems(self)
-        for x in range(len(items)):
-            if not items[x].has_key('obj'): continue
-            obj = items[x]['obj']
-            items[x]['class']['SampleID'] = "select_sample"
-            if items[x]['uid'] in self.request.get('hide_uids', ''): continue
-            if items[x]['uid'] in self.request.get('selected_uids', ''):
-                items[x]['selected'] = True
-            items[x]['view_url'] = obj.absolute_url() + "/view"
-            items[x]['ClientReference'] = obj.getClientReference()
-            items[x]['ClientSampleID'] = obj.getClientSampleID()
-            items[x]['SampleID'] = obj.getSampleID()
-            if obj.getSampleType().getHazardous():
-                items[x]['after']['SampleID'] = \
-                     "<img src='%s/++resource++bika.lims.images/hazardous.png'\
-                     title='%s'>"%(self.portal_url,
-                                   self.context.translate(_("Hazardous")))
-            items[x]['SampleTypeTitle'] = obj.getSampleTypeTitle()
-            items[x]['SamplePointTitle'] = obj.getSamplePointTitle()
-            items[x]['row_data'] = json.dumps({
-                'SampleID': items[x]['title'],
-                'ClientReference': items[x]['ClientReference'],
-                'Requests': ", ".join([o.Title() for o in obj.getAnalysisRequests()]),
-                'ClientSampleID': items[x]['ClientSampleID'],
-                'DateReceived': obj.getDateReceived() and self.ulocalized_time(
-                    obj.getDateReceived()) or '',
-                'SamplingDate': obj.getSamplingDate() and self.ulocalized_time(
-                    obj.getSamplingDate()) or '',
-                'SampleType': items[x]['SampleTypeTitle'],
-                'SamplePoint': items[x]['SamplePointTitle'],
-                'Composite': obj.getComposite(),
-                'AdHoc': obj.getAdHoc(),
-                'SamplingDeviation': obj.getSamplingDeviation() and \
-                                     obj.getSamplingDeviation().UID() or '',
-                'field_analyses': self.FieldAnalyses(obj),
-                'column': self.request.get('column', None),
-            })
-            items[x]['DateReceived'] = obj.getDateReceived() and \
-                 self.ulocalized_time(obj.getDateReceived(), long_format=1) or ''
-            items[x]['SamplingDate'] = obj.getSamplingDate() and \
-                 self.ulocalized_time(obj.getSamplingDate(), long_format=1) or ''
-        return items
-
-    def FieldAnalyses(self, sample):
-        """ Returns a dictionary of lists reflecting Field Analyses
-            linked to this sample (meaning field analyses on this sample's
-            first AR. For secondary ARs field analyses and their values are
-            read/written from the first AR.)
-            {category_uid: [service_uid, service_uid], ... }
-        """
-        res = {}
-        ars = sample.getAnalysisRequests()
-        if len(ars) > 0:
-            for analysis in ars[0].getAnalyses(full_objects = True):
-                service = analysis.getService()
-                if service.getPointOfCapture() == 'field':
-                    catuid = service.getCategoryUID()
-                    if res.has_key(catuid):
-                        res[catuid].append(service.UID())
-                    else:
-                        res[catuid] = [service.UID()]
-        return res
 
 class ajaxExpandCategory(BikaListingView):
     """ ajax requests pull this view for insertion when category header
@@ -1998,8 +1468,8 @@ class ajaxAnalysisRequestSubmit():
 
         # Now some basic validation
         required_fields = [field.getName() for field
-                           in AnalysisRequestSchema.fields()
-                           if field.required]
+                          in AnalysisRequestSchema.fields()
+                          if field.required]
 
         for column in columns:
             formkey = "ar.%s" % column
@@ -2013,8 +1483,14 @@ class ajaxAnalysisRequestSubmit():
 
             # check that required fields have values
             for field in required_fields:
-                # These two are still special.
-                if field in ['Contact', 'RequestID']:
+                # This one is still special.
+                if field in ['RequestID']:
+                    continue
+                # And these are not required if this is a secondary AR
+                if ar.get('Sample', '') != '' and field in [
+                    'SamplingDate',
+                    'SampleType'
+                ]:
                     continue
                 if (field in ar and not ar.get(field, '')):
                     error(field, column)
@@ -2045,11 +1521,6 @@ class ajaxAnalysisRequestSubmit():
                 # Analyses, we handle that specially.
                 if k == 'Analyses':
                     continue
-                # Contact things, there's only one on the form, so we
-                # insert those values here manually.
-                resolved_values['Contact'] = form['Contact']
-                resolved_values['CCContact'] = form['cc_uids'].split(",")
-                resolved_values['CCEmails'] = form['CCEmails']
 
                 if values.has_key("%s_uid" % k):
                     resolved_values[k] = values["%s_uid"%k]
@@ -2992,92 +2463,6 @@ class AnalysisRequestLog(LogView):
         return template
 
 
-class InvoiceView(BrowserView):
-
-    implements(IInvoiceView)
-
-    template = ViewPageTemplateFile("templates/analysisrequest_invoice.pt")
-    content = ViewPageTemplateFile("templates/analysisrequest_invoice_content.pt")
-    title = _('Invoice')
-    description = ''
-
-    def __call__(self):
-        context = self.context
-        workflow = getToolByName(context, 'portal_workflow')
-        # Collect related data and objects
-        invoice = context.getInvoice()
-        sample = context.getSample()
-        samplePoint = sample.getSamplePoint()
-        reviewState = workflow.getInfoFor(context, 'review_state')
-        # Collection invoice information
-        if invoice:
-            self.invoiceId = invoice.getId()
-        else:
-            self.invoiceId = _('Proforma (Not yet invoiced)')
-        # Collect verified invoice information
-        verified = reviewState in VERIFIED_STATES
-        if verified:
-            self.verifiedBy = context.getVerifier()
-        self.verified = verified
-        self.request['verified'] = verified
-        # Collect published date
-        datePublished = context.getDatePublished()
-        if datePublished != None:
-            datePublished = self.ulocalized_time(
-                datePublished, long_format=1
-            )
-        self.datePublished = datePublished
-        # Collect received date
-        dateRecieved = context.getDateReceived()
-        if dateRecieved != None:
-            dateRecieved = self.ulocalized_time(dateRecieved, long_format=1)
-        self.dateRecieved = dateRecieved
-        # Collect general information
-        self.reviewState = reviewState
-        self.contact = context.getContact().Title()
-        self.clientOrderNumber = context.getClientOrderNumber()
-        self.clientReference = context.getClientReference()
-        self.clientSampleId = sample.getClientSampleID()
-        self.sampleType = sample.getSampleType().Title()
-        self.samplePoint = samplePoint and samplePoint.Title()
-        self.requestId = context.getRequestID()
-        # Retrieve required data from analyses collection
-        analyses = []
-        for analysis in context.getRequestedAnalyses():
-            service = analysis.getService()
-            categoryName = service.getCategory().Title()
-            # Find the category
-            try:
-                category = (
-                    o for o in analyses if o['name'] == categoryName
-                ).next()
-            except:
-                category = {'name':categoryName, 'analyses':[]}
-                analyses.append(category)
-            # Append the analysis to the category
-            category['analyses'].append({
-                'title': analysis.Title(),
-                'price': service.getPrice(),
-                'priceVat': "%.2f" % service.getVATAmount(),
-                'priceTotal': "%.2f" % service.getTotalPrice(),
-            })
-        self.analyses = analyses
-        # Get totals
-        self.subtotal = context.getSubtotal()
-        self.vatTotal = "%.2f" % context.getVATTotal()
-        self.totalPrice = "%.2f" % context.getTotalPrice()
-        # Render the template
-        return self.template()
-
-
-class InvoicePrintView(InvoiceView):
-
-    template = ViewPageTemplateFile("templates/analysisrequest_invoice_print.pt")
-
-    def __call__(self):
-        return InvoiceView.__call__(self)
-
-
 class ClientContactVocabularyFactory(CatalogVocabulary):
 
     def __call__(self):
@@ -3106,3 +2491,17 @@ class WidgetVisibility(_WV):
             ret['add']['visible'].remove('Batch')
             ret['add']['hidden'].append('Batch')
         return ret
+
+
+class ReferenceWidgetVocabulary(DefaultReferenceWidgetVocabulary):
+    def __call__(self):
+
+        base_query = json.loads(self.request['base_query'])
+
+        # In client context, restrict samples to client samples only
+        if 'portal_type' in base_query \
+        and base_query['portal_type'] == 'Sample':
+            base_query['getClientUID'] = self.context.aq_parent.UID()
+            self.request['base_query'] = json.dumps(base_query)
+
+        return DefaultReferenceWidgetVocabulary.__call__(self)
